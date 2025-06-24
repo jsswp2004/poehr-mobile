@@ -326,14 +326,11 @@ export default function BlockedDateModal({
               {saving ? "Saving..." : "Save"}
             </ThemedText>
           </TouchableOpacity>
-        </ThemedView>
-
-        <ScrollView style={styles.content}>
+        </ThemedView>        <ScrollView style={styles.content}>
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
             <>
-              {" "}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
                 <input
@@ -363,8 +360,7 @@ export default function BlockedDateModal({
                 </ThemedText>
               </ThemedView>
               {currentUser?.role !== "patient" && (
-                <ThemedView style={styles.section}>
-                  <ThemedText style={styles.label}>Doctor</ThemedText>
+                <ThemedView style={styles.section}>                  <ThemedText style={styles.label}>Doctor</ThemedText>
                   {doctors.length > 0 ? (
                     <ThemedView style={styles.pickerContainer}>
                       <Picker
@@ -375,15 +371,27 @@ export default function BlockedDateModal({
                             value,
                             typeof value
                           );
+
+                          // Handle both string and number values
+                          const numericValue =
+                            typeof value === "string"
+                              ? parseInt(value, 10)
+                              : value;
+
                           if (
                             value !== undefined &&
                             value !== null &&
-                            typeof value === "number"
+                            !isNaN(numericValue)
                           ) {
                             setFormData((prev) => ({
                               ...prev,
-                              doctor_id: value === 0 ? undefined : value,
+                              doctor_id:
+                                numericValue === 0 ? undefined : numericValue,
                             }));
+                            console.log(
+                              "Updated doctor_id to:",
+                              numericValue === 0 ? undefined : numericValue
+                            );
                           }
                         }}
                         style={styles.picker}

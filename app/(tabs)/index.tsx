@@ -182,7 +182,7 @@ export default function HomeScreen() {
       </ThemedView>*/}
 
       <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">📅 Today's Appointments</ThemedText>
+        <ThemedText type="subtitle">📅 Today&apos;s Appointments</ThemedText>
         {loadingAppointments ? (
           <ThemedText>Loading appointments...</ThemedText>
         ) : todayAppointments.length > 0 ? (
@@ -269,7 +269,7 @@ export default function HomeScreen() {
         </ThemedText>
         <ThemedText>• ✅ Blocked dates management</ThemedText>
         <ThemedText>• ✅ Role-based permissions</ThemedText>
-        <ThemedText>• ✅ Today's appointments overview</ThemedText>
+        <ThemedText>• ✅ Today&apos;s appointments overview</ThemedText>
         <ThemedText>
           • 🔄 API integration (connects when backend is running)
         </ThemedText>

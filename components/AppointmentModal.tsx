@@ -324,16 +324,12 @@ export default function AppointmentModal({
             >
               {saving ? "Saving..." : "Save"}
             </ThemedText>
-          </TouchableOpacity>
-        </ThemedView>
-
+          </TouchableOpacity>        </ThemedView>
         <ScrollView style={styles.content}>
-          {" "}
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
             <>
-              {" "}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
                 <input
@@ -386,9 +382,8 @@ export default function AppointmentModal({
                           label={timeLabel}
                           value={time}
                         />
-                      );
-                    })}
-                  </Picker>{" "}
+                      );                    })}
+                  </Picker>
                 </ThemedView>
               </ThemedView>
               <ThemedView style={styles.section}>
@@ -402,13 +397,21 @@ export default function AppointmentModal({
                         value,
                         typeof value
                       );
+
+                      // Handle both string and number values
+                      const numericValue =
+                        typeof value === "string" ? parseInt(value, 10) : value;
                       if (
                         value !== undefined &&
                         value !== null &&
-                        typeof value === "number" &&
-                        value > 0
+                        !isNaN(numericValue) &&
+                        numericValue > 0
                       ) {
-                        setFormData((prev) => ({ ...prev, duration: value }));
+                        setFormData((prev) => ({
+                          ...prev,
+                          duration: numericValue,
+                        }));
+                        console.log("Updated duration to:", numericValue);
                       }
                     }}
                     style={styles.picker}
@@ -420,9 +423,8 @@ export default function AppointmentModal({
                         value={duration}
                       />
                     ))}
-                  </Picker>
-                </ThemedView>
-              </ThemedView>{" "}
+                  </Picker>                </ThemedView>
+              </ThemedView>
               {currentUser?.role !== "patient" && (
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Patient</ThemedText>
@@ -436,15 +438,23 @@ export default function AppointmentModal({
                             value,
                             typeof value
                           );
+
+                          // Handle both string and number values
+                          const numericValue =
+                            typeof value === "string"
+                              ? parseInt(value, 10)
+                              : value;
+
                           if (
                             value !== undefined &&
                             value !== null &&
-                            typeof value === "number"
+                            !isNaN(numericValue)
                           ) {
                             setFormData((prev) => ({
                               ...prev,
-                              patient_id: value,
+                              patient_id: numericValue,
                             }));
+                            console.log("Updated patient_id to:", numericValue);
                           }
                         }}
                         style={styles.picker}
@@ -469,7 +479,6 @@ export default function AppointmentModal({
                     </ThemedView>
                   ) : (
                     <ThemedView style={styles.pickerContainer}>
-                      {" "}
                       <ThemedText style={styles.dateText}>
                         No patients available. Connect to backend to load data.
                       </ThemedText>
@@ -490,15 +499,23 @@ export default function AppointmentModal({
                             value,
                             typeof value
                           );
+
+                          // Handle both string and number values
+                          const numericValue =
+                            typeof value === "string"
+                              ? parseInt(value, 10)
+                              : value;
+
                           if (
                             value !== undefined &&
                             value !== null &&
-                            typeof value === "number"
+                            !isNaN(numericValue)
                           ) {
                             setFormData((prev) => ({
                               ...prev,
-                              doctor_id: value,
+                              doctor_id: numericValue,
                             }));
+                            console.log("Updated doctor_id to:", numericValue);
                           }
                         }}
                         style={styles.picker}
@@ -527,7 +544,7 @@ export default function AppointmentModal({
                         No doctors available. Connect to backend to load data.
                       </ThemedText>
                     </ThemedView>
-                  )}{" "}
+                  )}
                 </ThemedView>
               )}
               <ThemedView style={styles.section}>
