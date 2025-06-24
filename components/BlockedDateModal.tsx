@@ -333,20 +333,21 @@ export default function BlockedDateModal({
             <ThemedText>Loading...</ThemedText>
           ) : (
             <>
-              {" "}              <ThemedView style={styles.section}>
+              {" "}
+              <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
                 <input
                   type="date"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
                     borderRadius: 8,
                     padding: 12,
                     fontSize: 16,
-                    color: '#333',
+                    color: "#333",
                     borderWidth: 1,
-                    borderColor: 'rgba(255, 255, 255, 0.2)',
-                    width: '100%',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                    width: "100%",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
                   }}
                   value={moment(formData.date).format("YYYY-MM-DD")}
                   onChange={(e) => {
@@ -545,7 +546,8 @@ const styles = StyleSheet.create({
   selectedReasonButtonText: {
     color: "white",
     fontWeight: "bold",
-  },  textInput: {
+  },
+  textInput: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
     padding: 12,
@@ -553,10 +555,10 @@ const styles = StyleSheet.create({
     color: "#333",
     minHeight: 80,
   },
-  dateHelp: { 
-    fontSize: 12, 
-    opacity: 0.7, 
-    marginTop: 4, 
-    fontStyle: "italic" 
+  dateHelp: {
+    fontSize: 12,
+    opacity: 0.7,
+    marginTop: 4,
+    fontStyle: "italic",
   },
 });

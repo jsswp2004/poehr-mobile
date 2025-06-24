@@ -332,24 +332,31 @@ export default function AppointmentModal({
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
-            <>              <ThemedView style={styles.section}>
+            <>
+              {" "}
+              <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
                 <input
                   type="date"
                   style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
                     borderRadius: 8,
                     padding: 12,
                     fontSize: 16,
-                    color: '#333',
-                    width: '100%',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    color: "#333",
+                    width: "100%",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
                   }}
-                  value={formData.appointment_date || moment().format("YYYY-MM-DD")}
+                  value={
+                    formData.appointment_date || moment().format("YYYY-MM-DD")
+                  }
                   onChange={(e) => {
                     const selectedDate = e.target.value;
                     if (selectedDate) {
-                      setFormData((prev) => ({ ...prev, appointment_date: selectedDate }));
+                      setFormData((prev) => ({
+                        ...prev,
+                        appointment_date: selectedDate,
+                      }));
                     }
                   }}
                   min={moment().format("YYYY-MM-DD")} // Prevent selecting past dates
