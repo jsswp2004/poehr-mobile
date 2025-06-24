@@ -1,19 +1,19 @@
-import React, { useState, useEffect } from 'react';
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Picker } from "@react-native-picker/picker";
+import moment from "moment";
+import React, { useCallback, useEffect, useState } from "react";
 import {
-  Modal,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
   Alert,
+  Modal,
+  ScrollView,
+  StyleSheet,
   TextInput,
-} from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Picker } from '@react-native-picker/picker';
-import moment from 'moment';
+  TouchableOpacity,
+} from "react-native";
 
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
-import { API_BASE_URL } from '@/config/api';
+import { ThemedText } from "@/components/ThemedText";
+import { ThemedView } from "@/components/ThemedView";
+import { API_BASE_URL } from "@/config/api";
 
 interface User {
   user_id: number;
@@ -53,77 +53,88 @@ export default function BlockedDateModal({
   blockedDate,
   selectedDate,
   currentUser,
-}: BlockedDateModalProps) {  const [doctors, setDoctors] = useState<Doctor[]>([]);
+}: BlockedDateModalProps) {
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-
   // Form state
   const [formData, setFormData] = useState({
     date: selectedDate,
-    reason: '',
+    reason: "",
     doctor_id: undefined as number | undefined,
   });
-  useEffect(() => {
-    if (visible) {
-      loadDoctors();
-      if (blockedDate) {
-        // Editing existing blocked date
-        setFormData({
-          date: moment(blockedDate.date).format('YYYY-MM-DD'),
-          reason: blockedDate.reason,
-          doctor_id: blockedDate.doctor_id,
-        });
-      } else {
-        // Creating new blocked date
-        setFormData({
-          date: selectedDate,
-          reason: '',
-          doctor_id: currentUser?.role === 'doctor' ? currentUser.user_id : undefined,
-        });
-      }
-    }
-  }, [visible, blockedDate, selectedDate, currentUser]);  const loadDoctors = async () => {
-    console.log('🚀 loadDoctors called, visible:', visible, 'currentUser:', currentUser?.role);
+
+  const loadDoctors = useCallback(async () => {
+    console.log(
+      "🚀 loadDoctors called, visible:",
+      visible,
+      "currentUser:",
+      currentUser?.role
+    );
     setLoading(true);
-    
+
     try {
-      const token = await AsyncStorage.getItem('access_token');
+      const token = await AsyncStorage.getItem("access_token");
       if (!token) {
-        console.log('❌ No auth token found for loading doctors');
+        console.log("❌ No auth token found for loading doctors");
         setDoctors([]);
         return;
       }
 
       // Load doctors - same logic as AppointmentModal
-      console.log('🔍 Loading doctors for blocked date - current user role:', currentUser?.role);
-      console.log('🔍 Making request to:', `${API_BASE_URL}/api/users/doctors/`);
-      
-      const doctorsResponse = await fetch(`${API_BASE_URL}/api/users/doctors/`, {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      console.log(
+        "🔍 Loading doctors for blocked date - current user role:",
+        currentUser?.role
+      );
+      console.log(
+        "🔍 Making request to:",
+        `${API_BASE_URL}/api/users/doctors/`
+      );
 
-      console.log('🔍 Doctors response status:', doctorsResponse.status);
+      const doctorsResponse = await fetch(
+        `${API_BASE_URL}/api/users/doctors/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log("🔍 Doctors response status:", doctorsResponse.status);
 
       if (doctorsResponse.ok) {
         const doctorsData = await doctorsResponse.json();
-        console.log('🔍 Doctors data received:', doctorsData);
-        console.log('🔍 Number of doctors:', doctorsData?.length || 0);
+        console.log("🔍 Doctors data received:", doctorsData);
+        console.log("🔍 Number of doctors:", doctorsData?.length || 0);
         setDoctors(doctorsData || []);
       } else {
         const errorText = await doctorsResponse.text();
-        console.log('❌ Failed to load doctors:', doctorsResponse.status);
-        console.log('❌ Error response:', errorText);
-        
+        console.log("❌ Failed to load doctors:", doctorsResponse.status);
+        console.log("❌ Error response:", errorText);
+
         // If backend is unavailable, provide demo data
         if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
-          console.log('🎭 Backend unavailable, using demo doctors');
+          console.log("🎭 Backend unavailable, using demo doctors");
           const demoDoctors = [
-            { id: 1, username: 'demo_doc1', first_name: 'John', last_name: 'Smith' },
-            { id: 2, username: 'demo_doc2', first_name: 'Jane', last_name: 'Doe' },
-            { id: 3, username: 'demo_doc3', first_name: 'Mike', last_name: 'Johnson' },
+            {
+              id: 1,
+              username: "demo_doc1",
+              first_name: "John",
+              last_name: "Smith",
+            },
+            {
+              id: 2,
+              username: "demo_doc2",
+              first_name: "Jane",
+              last_name: "Doe",
+            },
+            {
+              id: 3,
+              username: "demo_doc3",
+              first_name: "Mike",
+              last_name: "Johnson",
+            },
           ];
           setDoctors(demoDoctors);
         } else {
@@ -131,85 +142,153 @@ export default function BlockedDateModal({
         }
       }
     } catch (error) {
-      console.error('Error loading doctors:', error);
+      console.error("Error loading doctors:", error);
       // Provide demo data on network error
-      console.log('🎭 Network error, using demo doctors');
+      console.log("🎭 Network error, using demo doctors");
       const demoDoctors = [
-        { id: 1, username: 'demo_doc1', first_name: 'John', last_name: 'Smith' },
-        { id: 2, username: 'demo_doc2', first_name: 'Jane', last_name: 'Doe' },
-        { id: 3, username: 'demo_doc3', first_name: 'Mike', last_name: 'Johnson' },
+        {
+          id: 1,
+          username: "demo_doc1",
+          first_name: "John",
+          last_name: "Smith",
+        },
+        { id: 2, username: "demo_doc2", first_name: "Jane", last_name: "Doe" },
+        {
+          id: 3,
+          username: "demo_doc3",
+          first_name: "Mike",
+          last_name: "Johnson",
+        },
       ];
       setDoctors(demoDoctors);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser, visible]);
+
+  useEffect(() => {
+    if (visible) {
+      loadDoctors();
+      if (blockedDate) {
+        // Editing existing blocked date
+        setFormData({
+          date: moment(blockedDate.date).format("YYYY-MM-DD"),
+          reason: blockedDate.reason,
+          doctor_id: blockedDate.doctor_id,
+        });
+      } else {
+        // Creating new blocked date
+        setFormData({
+          date: selectedDate,
+          reason: "",
+          doctor_id:
+            currentUser?.role === "doctor" ? currentUser.user_id : undefined,
+        });
+      }
+    }
+  }, [visible, blockedDate, selectedDate, currentUser, loadDoctors]);
+
   const handleSave = async () => {
     if (!formData.reason.trim()) {
-      Alert.alert('Error', 'Please provide a reason for blocking this date');
+      Alert.alert("Error", "Please provide a reason for blocking this date");
       return;
     }
 
     setSaving(true);
     try {
-      const token = await AsyncStorage.getItem('access_token');
+      const token = await AsyncStorage.getItem("access_token");
       if (!token) {
-        Alert.alert('Error', 'Authentication required');
+        Alert.alert("Error", "Authentication required");
         return;
       }
 
-      const url = blockedDate 
+      const url = blockedDate
         ? `${API_BASE_URL}/api/blocked-dates/${blockedDate.id}/`
         : `${API_BASE_URL}/api/blocked-dates/`;
-      
-      const method = blockedDate ? 'PUT' : 'POST';
 
-      console.log('💾 Saving blocked date:', method, url);
-      console.log('💾 Data:', formData);
+      const method = blockedDate ? "PUT" : "POST";
+
+      console.log("💾 Saving blocked date:", method, url);
+      console.log("💾 Data:", formData);
 
       const response = await fetch(url, {
         method,
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(formData),
       });
 
-      console.log('💾 Save response status:', response.status);
+      console.log("💾 Save response status:", response.status);
 
       if (response.ok) {
         Alert.alert(
-          'Success',
-          `Date ${blockedDate ? 'updated' : 'blocked'} successfully!`,
-          [{ text: 'OK', onPress: () => { onSave(); onClose(); } }]
+          "Success",
+          `Date ${blockedDate ? "updated" : "blocked"} successfully!`,
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                onSave();
+                onClose();
+              },
+            },
+          ]
         );
       } else {
         const errorText = await response.text();
-        console.log('❌ Save error response:', errorText);
-        
+        console.log("❌ Save error response:", errorText);
+
         if (response.status === 404) {
           Alert.alert(
-            'Demo Mode',
-            `Blocked date would be ${blockedDate ? 'updated' : 'created'} in demo mode.\n\n${formData.reason} on ${moment(formData.date).format('MMMM D, YYYY')}`,
-            [{ text: 'OK', onPress: () => { onSave(); onClose(); } }]
+            "Demo Mode",
+            `Blocked date would be ${
+              blockedDate ? "updated" : "created"
+            } in demo mode.\n\n${formData.reason} on ${moment(
+              formData.date
+            ).format("MMMM D, YYYY")}`,
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  onSave();
+                  onClose();
+                },
+              },
+            ]
           );
         } else {
           try {
             const errorData = JSON.parse(errorText);
-            Alert.alert('Error', errorData.message || 'Failed to save blocked date');
+            Alert.alert(
+              "Error",
+              errorData.message || "Failed to save blocked date"
+            );
           } catch {
-            Alert.alert('Error', 'Failed to save blocked date');
+            Alert.alert("Error", "Failed to save blocked date");
           }
         }
       }
     } catch (error) {
-      console.error('Error saving blocked date:', error);
+      console.error("Error saving blocked date:", error);
       // Show demo mode success for network errors
       Alert.alert(
-        'Demo Mode',
-        `Blocked date would be ${blockedDate ? 'updated' : 'created'} in demo mode.\n\n${formData.reason} on ${moment(formData.date).format('MMMM D, YYYY')}`,
-        [{ text: 'OK', onPress: () => { onSave(); onClose(); } }]
+        "Demo Mode",
+        `Blocked date would be ${
+          blockedDate ? "updated" : "created"
+        } in demo mode.\n\n${formData.reason} on ${moment(formData.date).format(
+          "MMMM D, YYYY"
+        )}`,
+        [
+          {
+            text: "OK",
+            onPress: () => {
+              onSave();
+              onClose();
+            },
+          },
+        ]
       );
     } finally {
       setSaving(false);
@@ -217,13 +296,13 @@ export default function BlockedDateModal({
   };
 
   const commonReasons = [
-    'Personal leave',
-    'Medical conference',
-    'Vacation',
-    'Emergency',
-    'Maintenance',
-    'Holiday',
-    'Other',
+    "Personal leave",
+    "Medical conference",
+    "Vacation",
+    "Emergency",
+    "Maintenance",
+    "Holiday",
+    "Other",
   ];
 
   return (
@@ -238,11 +317,13 @@ export default function BlockedDateModal({
             <ThemedText style={styles.cancelButton}>Cancel</ThemedText>
           </TouchableOpacity>
           <ThemedText type="title">
-            {blockedDate ? 'Edit Blocked Date' : 'Block Date'}
+            {blockedDate ? "Edit Blocked Date" : "Block Date"}
           </ThemedText>
           <TouchableOpacity onPress={handleSave} disabled={saving}>
-            <ThemedText style={[styles.saveButton, saving && styles.disabledButton]}>
-              {saving ? 'Saving...' : 'Save'}
+            <ThemedText
+              style={[styles.saveButton, saving && styles.disabledButton]}
+            >
+              {saving ? "Saving..." : "Save"}
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
@@ -251,18 +332,36 @@ export default function BlockedDateModal({
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
-            <>              <ThemedView style={styles.section}>
+            <>
+              {" "}              <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
-                <ThemedText style={styles.dateText}>
-                  {moment(formData.date).format('MMMM D, YYYY')}
+                <input
+                  type="date"
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    color: '#333',
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 255, 255, 0.2)',
+                    width: '100%',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                  }}
+                  value={moment(formData.date).format("YYYY-MM-DD")}
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+                    if (selectedDate) {
+                      setFormData((prev) => ({ ...prev, date: selectedDate }));
+                    }
+                  }}
+                  min={moment().format("YYYY-MM-DD")} // Prevent selecting past dates
+                />
+                <ThemedText style={styles.dateHelp}>
+                  Select a date to block for appointments
                 </ThemedText>
               </ThemedView>
-
-              <ThemedText style={styles.debugText}>
-                DEBUG: currentUser?.role = {currentUser?.role || 'null'}, doctors.length = {doctors.length}
-              </ThemedText>
-
-              {currentUser?.role !== 'patient' && (
+              {currentUser?.role !== "patient" && (
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Doctor</ThemedText>
                   {doctors.length > 0 ? (
@@ -270,18 +369,32 @@ export default function BlockedDateModal({
                       <Picker
                         selectedValue={formData.doctor_id || 0}
                         onValueChange={(value) => {
-                          console.log('Doctor picker value:', value, typeof value);
-                          if (value !== undefined && value !== null && typeof value === 'number') {
-                            setFormData(prev => ({...prev, doctor_id: value === 0 ? undefined : value}));
+                          console.log(
+                            "Doctor picker value:",
+                            value,
+                            typeof value
+                          );
+                          if (
+                            value !== undefined &&
+                            value !== null &&
+                            typeof value === "number"
+                          ) {
+                            setFormData((prev) => ({
+                              ...prev,
+                              doctor_id: value === 0 ? undefined : value,
+                            }));
                           }
                         }}
                         style={styles.picker}
                       >
                         <Picker.Item label="Select Doctor" value={0} />
-                        {doctors.map(doctor => {
-                          const doctorLabel = doctor.first_name && doctor.last_name 
-                            ? `Dr. ${doctor.first_name} ${doctor.last_name}` 
-                            : doctor.username ? doctor.username : `Doctor ${doctor.id}`;
+                        {doctors.map((doctor) => {
+                          const doctorLabel =
+                            doctor.first_name && doctor.last_name
+                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
+                              : doctor.username
+                              ? doctor.username
+                              : `Doctor ${doctor.id}`;
                           return (
                             <Picker.Item
                               key={doctor.id}
@@ -295,7 +408,9 @@ export default function BlockedDateModal({
                   ) : (
                     <ThemedView style={styles.pickerContainer}>
                       <ThemedText style={styles.dateText}>
-                        {loading ? 'Loading doctors...' : 'No doctors available. Connect to backend to load data.'}
+                        {loading
+                          ? "Loading doctors..."
+                          : "No doctors available. Connect to backend to load data."}
                       </ThemedText>
                     </ThemedView>
                   )}
@@ -304,37 +419,41 @@ export default function BlockedDateModal({
                   </ThemedText>
                 </ThemedView>
               )}
-
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Quick Reasons</ThemedText>
                 <ThemedView style={styles.reasonButtons}>
-                  {commonReasons.map(reason => (
+                  {commonReasons.map((reason) => (
                     <TouchableOpacity
                       key={reason}
                       style={[
                         styles.reasonButton,
-                        formData.reason === reason && styles.selectedReasonButton
+                        formData.reason === reason &&
+                          styles.selectedReasonButton,
                       ]}
-                      onPress={() => setFormData({...formData, reason})}
+                      onPress={() => setFormData({ ...formData, reason })}
                     >
-                      <ThemedText style={[
-                        styles.reasonButtonText,
-                        formData.reason === reason && styles.selectedReasonButtonText
-                      ]}>
+                      <ThemedText
+                        style={[
+                          styles.reasonButtonText,
+                          formData.reason === reason &&
+                            styles.selectedReasonButtonText,
+                        ]}
+                      >
                         {reason}
                       </ThemedText>
                     </TouchableOpacity>
                   ))}
                 </ThemedView>
               </ThemedView>
-
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Custom Reason</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Enter reason for blocking this date"
                   value={formData.reason}
-                  onChangeText={(text) => setFormData({...formData, reason: text})}
+                  onChangeText={(text) =>
+                    setFormData({ ...formData, reason: text })
+                  }
                   multiline
                   numberOfLines={3}
                   textAlignVertical="top"
@@ -353,21 +472,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    borderBottomColor: "rgba(255, 255, 255, 0.1)",
   },
   cancelButton: {
-    color: '#e74c3c',
+    color: "#e74c3c",
     fontSize: 16,
   },
   saveButton: {
-    color: '#3498db',
+    color: "#3498db",
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   disabledButton: {
     opacity: 0.5,
@@ -381,19 +500,19 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
   },
   dateText: {
     fontSize: 16,
     padding: 12,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
   },
   pickerContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   picker: {
     height: 50,
@@ -404,40 +523,40 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   reasonButtons: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   reasonButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'transparent',
+    borderColor: "transparent",
   },
   selectedReasonButton: {
-    backgroundColor: '#3498db',
-    borderColor: '#3498db',
+    backgroundColor: "#3498db",
+    borderColor: "#3498db",
   },
   reasonButtonText: {
     fontSize: 14,
   },
   selectedReasonButtonText: {
-    color: 'white',
-    fontWeight: 'bold',
+    color: "white",
+    fontWeight: "bold",
   },  textInput: {
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    color: '#333',
+    color: "#333",
     minHeight: 80,
   },
-  debugText: {
-    fontSize: 12,
-    color: '#ff6b6b',
-    marginBottom: 8,
-    fontFamily: 'monospace',
+  dateHelp: { 
+    fontSize: 12, 
+    opacity: 0.7, 
+    marginTop: 4, 
+    fontStyle: "italic" 
   },
 });
