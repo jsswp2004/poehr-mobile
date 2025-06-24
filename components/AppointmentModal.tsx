@@ -324,7 +324,8 @@ export default function AppointmentModal({
             >
               {saving ? "Saving..." : "Save"}
             </ThemedText>
-          </TouchableOpacity>        </ThemedView>
+          </TouchableOpacity>{" "}
+        </ThemedView>
         <ScrollView style={styles.content}>
           {loading ? (
             <ThemedText>Loading...</ThemedText>
@@ -382,7 +383,8 @@ export default function AppointmentModal({
                           label={timeLabel}
                           value={time}
                         />
-                      );                    })}
+                      );
+                    })}
                   </Picker>
                 </ThemedView>
               </ThemedView>
@@ -423,7 +425,8 @@ export default function AppointmentModal({
                         value={duration}
                       />
                     ))}
-                  </Picker>                </ThemedView>
+                  </Picker>{" "}
+                </ThemedView>
               </ThemedView>
               {currentUser?.role !== "patient" && (
                 <ThemedView style={styles.section}>

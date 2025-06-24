@@ -32,9 +32,11 @@ interface Doctor {
 
 interface BlockedDate {
   id?: number;
-  date: string;
-  reason: string;
-  doctor_id?: number;
+  start_time: string;
+  end_time: string;
+  is_blocked: boolean;
+  block_type?: string;
+  doctor?: number;
 }
 
 interface BlockedDateModalProps {
@@ -172,9 +174,9 @@ export default function BlockedDateModal({
       if (blockedDate) {
         // Editing existing blocked date
         setFormData({
-          date: moment(blockedDate.date).format("YYYY-MM-DD"),
-          reason: blockedDate.reason,
-          doctor_id: blockedDate.doctor_id,
+          date: moment(blockedDate.start_time).format("YYYY-MM-DD"),
+          reason: blockedDate.block_type || "",
+          doctor_id: blockedDate.doctor,
         });
       } else {
         // Creating new blocked date
@@ -201,15 +203,24 @@ export default function BlockedDateModal({
         Alert.alert("Error", "Authentication required");
         return;
       }
-
       const url = blockedDate
-        ? `${API_BASE_URL}/api/blocked-dates/${blockedDate.id}/`
-        : `${API_BASE_URL}/api/blocked-dates/`;
+        ? `${API_BASE_URL}/api/availability/${blockedDate.id}/`
+        : `${API_BASE_URL}/api/availability/`;
 
       const method = blockedDate ? "PUT" : "POST";
 
+      // Convert the form data to match the Availability model
+      const availabilityData = {
+        doctor: formData.doctor_id,
+        start_time: `${formData.date}T00:00:00Z`, // Start of the day
+        end_time: `${formData.date}T23:59:59Z`, // End of the day
+        is_blocked: true,
+        block_type: formData.reason || "Other",
+        recurrence: "none",
+      };
+
       console.log("💾 Saving blocked date:", method, url);
-      console.log("💾 Data:", formData);
+      console.log("💾 Data:", availabilityData);
 
       const response = await fetch(url, {
         method,
@@ -217,7 +228,7 @@ export default function BlockedDateModal({
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(availabilityData),
       });
 
       console.log("💾 Save response status:", response.status);
@@ -294,16 +305,7 @@ export default function BlockedDateModal({
       setSaving(false);
     }
   };
-
-  const commonReasons = [
-    "Personal leave",
-    "Medical conference",
-    "Vacation",
-    "Emergency",
-    "Maintenance",
-    "Holiday",
-    "Other",
-  ];
+  const commonReasons = ["Lunch", "Meeting", "Vacation", "On Leave", "Other"];
 
   return (
     <Modal
@@ -326,7 +328,8 @@ export default function BlockedDateModal({
               {saving ? "Saving..." : "Save"}
             </ThemedText>
           </TouchableOpacity>
-        </ThemedView>        <ScrollView style={styles.content}>
+        </ThemedView>{" "}
+        <ScrollView style={styles.content}>
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
@@ -360,7 +363,9 @@ export default function BlockedDateModal({
                 </ThemedText>
               </ThemedView>
               {currentUser?.role !== "patient" && (
-                <ThemedView style={styles.section}>                  <ThemedText style={styles.label}>Doctor</ThemedText>
+                <ThemedView style={styles.section}>
+                  {" "}
+                  <ThemedText style={styles.label}>Doctor</ThemedText>
                   {doctors.length > 0 ? (
                     <ThemedView style={styles.pickerContainer}>
                       <Picker
