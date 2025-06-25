@@ -46,15 +46,6 @@ interface BlockedDate {
   doctor_id?: number;
 }
 
-interface AvailabilityBlockedDate {
-  id?: number;
-  start_time: string;
-  end_time: string;
-  is_blocked: boolean;
-  block_type?: string;
-  doctor?: number;
-}
-
 export default function AppointmentsScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -70,7 +61,7 @@ export default function AppointmentsScreen() {
   >();
   const [blockedDateModalVisible, setBlockedDateModalVisible] = useState(false);
   const [editingBlockedDate, setEditingBlockedDate] = useState<
-    any | undefined
+    BlockedDate | undefined
   >();
 
   useEffect(() => {
@@ -138,58 +129,22 @@ export default function AppointmentsScreen() {
 
       console.log(
         "🔍 Loading blocked dates from:",
-        `${API_BASE_URL}/api/availability/?is_blocked=true`
+        `${API_BASE_URL}/api/blocked-dates/`
       );
 
-      const response = await fetch(
-        `${API_BASE_URL}/api/availability/?is_blocked=true`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const response = await fetch(`${API_BASE_URL}/api/blocked-dates/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
 
       console.log("🔍 Blocked dates response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
-        console.log("🔍 Raw availability data:", data);
-        console.log("🔍 Blocked dates loaded:", data?.length || 0, "items"); // Transform availability data to blocked date format
-        const transformedBlockedDates = data.map((availability: any) => {
-          // Extract just the date part to avoid timezone issues
-          const startTime = availability.start_time;
-          let parsedDate;
-
-          if (startTime.includes("T")) {
-            // Extract just the date part before the 'T'
-            parsedDate = startTime.split("T")[0];
-          } else {
-            // If it's just a date, use it directly
-            parsedDate = startTime;
-          }
-
-          const transformedDate = {
-            id: availability.id,
-            date: parsedDate,
-            reason: availability.block_type || "Blocked",
-            doctor_id: availability.doctor,
-          };
-          console.log(
-            "🔄 Transformed availability:",
-            availability,
-            "->",
-            transformedDate,
-            "| Original start_time:",
-            startTime,
-            "| Extracted date:",
-            parsedDate
-          );
-          return transformedDate;
-        });
-
-        console.log("🔄 Final blocked dates:", transformedBlockedDates);
-        setBlockedDates(transformedBlockedDates);
+        console.log("🔍 Blocked dates loaded:", data?.length || 0, "items");
+        setBlockedDates(data);
       } else {
         console.error("Failed to load blocked dates:", response.status);
         // If backend is unavailable, provide demo data
@@ -377,17 +332,9 @@ export default function AppointmentsScreen() {
     setEditingBlockedDate(undefined);
     setBlockedDateModalVisible(true);
   };
+
   const handleEditBlockedDate = (blockedDate: BlockedDate) => {
-    // Convert BlockedDate to AvailabilityBlockedDate format for the modal
-    const availabilityBlockedDate = {
-      id: blockedDate.id,
-      start_time: `${blockedDate.date}T09:00:00`,
-      end_time: `${blockedDate.date}T17:00:00`,
-      is_blocked: true,
-      block_type: blockedDate.reason,
-      doctor: blockedDate.doctor_id,
-    };
-    setEditingBlockedDate(availabilityBlockedDate as any);
+    setEditingBlockedDate(blockedDate);
     setBlockedDateModalVisible(true);
   };
 
@@ -404,8 +351,9 @@ export default function AppointmentsScreen() {
             try {
               const token = await AsyncStorage.getItem("access_token");
               if (!token) return;
+
               const response = await fetch(
-                `${API_BASE_URL}/api/availability/${blockedDate.id}/`,
+                `${API_BASE_URL}/api/blocked-dates/${blockedDate.id}/`,
                 {
                   method: "DELETE",
                   headers: {
@@ -430,15 +378,9 @@ export default function AppointmentsScreen() {
       ]
     );
   };
+
   const handleBlockedDateSave = async () => {
-    console.log("🔄 handleBlockedDateSave called - starting refresh");
-    // Add a small delay to ensure modal closes smoothly before refreshing
-    setTimeout(async () => {
-      console.log("🔄 Refreshing appointments and blocked dates after save");
-      await loadBlockedDates(); // Refresh blocked dates after saving
-      await loadAppointments(); // Also refresh appointments to be thorough
-      console.log("✅ Appointments page data refreshed successfully");
-    }, 300);
+    await loadBlockedDates(); // Refresh blocked dates after saving
   };
 
   if (loading) {

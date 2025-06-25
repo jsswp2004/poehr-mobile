@@ -1,7 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
-import { router } from "expo-router";
 import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -61,7 +59,6 @@ export default function BlockedDateModal({
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [showDatePicker, setShowDatePicker] = useState(false);
   // Form state
   const [formData, setFormData] = useState({
     date: selectedDate,
@@ -177,7 +174,7 @@ export default function BlockedDateModal({
       if (blockedDate) {
         // Editing existing blocked date
         setFormData({
-          date: moment(blockedDate.start_time).local().format("YYYY-MM-DD"),
+          date: moment(blockedDate.start_time).format("YYYY-MM-DD"),
           reason: blockedDate.block_type || "",
           doctor_id: blockedDate.doctor,
         });
@@ -192,12 +189,9 @@ export default function BlockedDateModal({
       }
     }
   }, [visible, blockedDate, selectedDate, currentUser, loadDoctors]);
-  const handleSave = async () => {
-    console.log("🚀 handleSave called - starting save process");
-    console.log("🚀 Form data:", formData);
 
+  const handleSave = async () => {
     if (!formData.reason.trim()) {
-      console.log("❌ Validation failed: No reason provided");
       Alert.alert("Error", "Please provide a reason for blocking this date");
       return;
     }
@@ -213,63 +207,20 @@ export default function BlockedDateModal({
         ? `${API_BASE_URL}/api/availability/${blockedDate.id}/`
         : `${API_BASE_URL}/api/availability/`;
 
-      const method = blockedDate ? "PUT" : "POST"; // Convert the form data to match the Availability model
-      const startDateTime = moment(`${formData.date}T00:00:00`).format(
-        "YYYY-MM-DDTHH:mm:ss"
-      );
-      const endDateTime = moment(`${formData.date}T23:59:59`).format(
-        "YYYY-MM-DDTHH:mm:ss"
-      );
+      const method = blockedDate ? "PUT" : "POST";
 
-      // Validate that the dates are valid
-      if (!moment(startDateTime).isValid() || !moment(endDateTime).isValid()) {
-        console.log("❌ Date validation failed:", {
-          startDateTime,
-          endDateTime,
-        });
-        Alert.alert(
-          "Error",
-          "Invalid date format. Please select a valid date."
-        );
-        return;
-      }
-      const availabilityData: any = {
-        start_time: startDateTime, // Local time formatted
-        end_time: endDateTime, // Local time formatted
+      // Convert the form data to match the Availability model
+      const availabilityData = {
+        doctor: formData.doctor_id,
+        start_time: `${formData.date}T00:00:00Z`, // Start of the day
+        end_time: `${formData.date}T23:59:59Z`, // End of the day
         is_blocked: true,
         block_type: formData.reason || "Other",
         recurrence: "none",
       };
 
-      // Only include doctor field if a doctor is selected
-      if (formData.doctor_id && formData.doctor_id > 0) {
-        availabilityData.doctor = formData.doctor_id;
-      }
-
-      // Validate the data before sending
-      console.log("💾 Validating availability data:", availabilityData);
-      if (!availabilityData.start_time || !availabilityData.end_time) {
-        console.log("❌ Validation failed: Missing start_time or end_time");
-        Alert.alert("Error", "Invalid date/time format");
-        return;
-      }
-      if (
-        !availabilityData.block_type ||
-        availabilityData.block_type.trim() === ""
-      ) {
-        console.log("❌ Validation failed: Missing block_type");
-        Alert.alert("Error", "Please provide a reason for blocking this date");
-        return;
-      }
-
       console.log("💾 Saving blocked date:", method, url);
-      console.log("💾 Form data date:", formData.date);
-      console.log("💾 Selected date:", selectedDate);
-      console.log("💾 Timezone offset:", new Date().getTimezoneOffset());
-      console.log(
-        "💾 Final data to send:",
-        JSON.stringify(availabilityData, null, 2)
-      );
+      console.log("💾 Data:", availabilityData);
 
       const response = await fetch(url, {
         method,
@@ -279,60 +230,19 @@ export default function BlockedDateModal({
         },
         body: JSON.stringify(availabilityData),
       });
+
       console.log("💾 Save response status:", response.status);
+
       if (response.ok) {
-        console.log("✅ Save was successful! Showing success alert...");
-        // Show success notification and navigate back to appointments
         Alert.alert(
-          "✅ Success",
-          `${moment(formData.date).format("MMMM D, YYYY")} has been ${
-            blockedDate ? "updated" : "blocked"
-          } successfully!\n\nReason: ${formData.reason}`,
+          "Success",
+          `Date ${blockedDate ? "updated" : "blocked"} successfully!`,
           [
             {
-              text: "View Calendar",
+              text: "OK",
               onPress: () => {
-                console.log(
-                  "🔄 Success alert button pressed - starting navigation flow"
-                );
-                // Execute all actions together for better reliability
-                onSave(); // Refresh the data immediately
-                onClose(); // Close the modal
-
-                // Small delay for smooth transition, then navigate
-                setTimeout(() => {
-                  console.log(
-                    "🔄 Attempting to navigate to /(tabs)/appointments"
-                  );
-                  try {
-                    // Use replace to force refresh and ensure we're on appointments tab
-                    router.replace("/(tabs)/appointments");
-                    console.log(
-                      "✅ Navigation replace command executed successfully"
-                    );
-                  } catch (navError) {
-                    console.error("❌ Navigation replace error:", navError);
-                    // Fallback: try dismissing all modals and navigating
-                    try {
-                      router.dismissAll();
-                      setTimeout(() => {
-                        router.push("/(tabs)/appointments");
-                        console.log(
-                          "✅ Fallback navigation with dismissAll executed"
-                        );
-                      }, 50);
-                    } catch (fallbackError) {
-                      console.error(
-                        "❌ Fallback navigation also failed:",
-                        fallbackError
-                      );
-                      // Last resort: just log and rely on data refresh
-                      console.log(
-                        "📝 Relying on data refresh only - modal closed and data refreshed"
-                      );
-                    }
-                  }
-                }, 50);
+                onSave();
+                onClose();
               },
             },
           ]
@@ -340,178 +250,53 @@ export default function BlockedDateModal({
       } else {
         const errorText = await response.text();
         console.log("❌ Save error response:", errorText);
-        console.log("❌ Response status:", response.status);
-
-        // Try to parse and show the actual error message
-        let errorMessage = "Failed to save blocked date";
-        try {
-          const errorData = JSON.parse(errorText);
-          console.log("❌ Parsed error data:", errorData);
-          errorMessage =
-            errorData.message ||
-            errorData.error ||
-            errorData.detail ||
-            JSON.stringify(errorData);
-        } catch (parseError) {
-          console.log("❌ Could not parse error response:", parseError);
-          errorMessage = errorText || "Unknown error occurred";
-        }
 
         if (response.status === 404) {
           Alert.alert(
-            "🎭 Demo Mode Success",
-            `${moment(formData.date).format("MMMM D, YYYY")} would be ${
-              blockedDate ? "updated" : "blocked"
-            } in a real environment.\n\nReason: ${formData.reason}`,
+            "Demo Mode",
+            `Blocked date would be ${
+              blockedDate ? "updated" : "created"
+            } in demo mode.\n\n${formData.reason} on ${moment(
+              formData.date
+            ).format("MMMM D, YYYY")}`,
             [
               {
-                text: "View Calendar",
+                text: "OK",
                 onPress: () => {
-                  console.log(
-                    "🔄 Demo mode (404) alert button pressed - starting navigation flow"
-                  );
-                  // Close modal first
+                  onSave();
                   onClose();
-                  // Small delay to ensure modal closes, then refresh and navigate
-                  setTimeout(() => {
-                    onSave(); // Refresh the data
-                    console.log(
-                      "🔄 Attempting to navigate to /(tabs)/appointments (demo mode 404)"
-                    );
-                    try {
-                      router.replace("/(tabs)/appointments");
-                      console.log(
-                        "✅ Demo mode (404) navigation replace command executed successfully"
-                      );
-                    } catch (navError) {
-                      console.error(
-                        "❌ Demo mode (404) navigation error:",
-                        navError
-                      );
-                      // Fallback for demo mode
-                      try {
-                        router.dismissAll();
-                        router.push("/(tabs)/appointments");
-                        console.log(
-                          "✅ Demo mode (404) fallback navigation executed"
-                        );
-                      } catch (fallbackError) {
-                        console.error(
-                          "❌ Demo mode (404) fallback failed:",
-                          fallbackError
-                        );
-                      }
-                    }
-                  }, 100);
                 },
               },
             ]
           );
         } else {
-          // Show the detailed error message to the user, but also provide demo mode
-          console.log("❌ API failed with status:", response.status);
-          console.log("❌ Showing demo mode success since API failed");
-          Alert.alert(
-            "🎭 Demo Mode Success",
-            `${moment(formData.date).format("MMMM D, YYYY")} has been ${
-              blockedDate ? "updated" : "blocked"
-            } successfully in demo mode!\n\nReason: ${
-              formData.reason
-            }\n\n(API Error: ${errorMessage})`,
-            [
-              {
-                text: "View Calendar",
-                onPress: () => {
-                  console.log(
-                    "🔄 Demo mode (API error) alert button pressed - starting navigation flow"
-                  );
-                  // Close modal first
-                  onClose();
-                  // Small delay to ensure modal closes, then refresh and navigate
-                  setTimeout(() => {
-                    onSave(); // Refresh the data
-                    console.log(
-                      "🔄 Attempting to navigate to /(tabs)/appointments (demo mode API error)"
-                    );
-                    try {
-                      router.replace("/(tabs)/appointments");
-                      console.log(
-                        "✅ Demo mode (API error) navigation replace command executed successfully"
-                      );
-                    } catch (navError) {
-                      console.error(
-                        "❌ Demo mode (API error) navigation error:",
-                        navError
-                      );
-                      // Fallback for demo mode
-                      try {
-                        router.dismissAll();
-                        router.push("/(tabs)/appointments");
-                        console.log(
-                          "✅ Demo mode (API error) fallback navigation executed"
-                        );
-                      } catch (fallbackError) {
-                        console.error(
-                          "❌ Demo mode (API error) fallback failed:",
-                          fallbackError
-                        );
-                      }
-                    }
-                  }, 100);
-                },
-              },
-            ]
-          );
+          try {
+            const errorData = JSON.parse(errorText);
+            Alert.alert(
+              "Error",
+              errorData.message || "Failed to save blocked date"
+            );
+          } catch {
+            Alert.alert("Error", "Failed to save blocked date");
+          }
         }
       }
     } catch (error) {
       console.error("Error saving blocked date:", error);
       // Show demo mode success for network errors
       Alert.alert(
-        "🎭 Demo Mode Success",
-        `${moment(formData.date).format("MMMM D, YYYY")} would be ${
-          blockedDate ? "updated" : "blocked"
-        } in a real environment.\n\nReason: ${formData.reason}`,
+        "Demo Mode",
+        `Blocked date would be ${
+          blockedDate ? "updated" : "created"
+        } in demo mode.\n\n${formData.reason} on ${moment(formData.date).format(
+          "MMMM D, YYYY"
+        )}`,
         [
           {
-            text: "View Calendar",
+            text: "OK",
             onPress: () => {
-              console.log(
-                "🔄 Demo mode (network error) alert button pressed - starting navigation flow"
-              );
-              // Close modal first
+              onSave();
               onClose();
-              // Small delay to ensure modal closes, then refresh and navigate
-              setTimeout(() => {
-                onSave(); // Refresh the data
-                console.log(
-                  "🔄 Attempting to navigate to /(tabs)/appointments (network error)"
-                );
-                try {
-                  router.replace("/(tabs)/appointments");
-                  console.log(
-                    "✅ Demo mode (network error) navigation replace command executed successfully"
-                  );
-                } catch (navError) {
-                  console.error(
-                    "❌ Demo mode (network error) navigation error:",
-                    navError
-                  );
-                  // Fallback for network error demo mode
-                  try {
-                    router.dismissAll();
-                    router.push("/(tabs)/appointments");
-                    console.log(
-                      "✅ Demo mode (network error) fallback navigation executed"
-                    );
-                  } catch (fallbackError) {
-                    console.error(
-                      "❌ Demo mode (network error) fallback failed:",
-                      fallbackError
-                    );
-                  }
-                }
-              }, 100);
             },
           },
         ]
@@ -529,7 +314,6 @@ export default function BlockedDateModal({
       presentationStyle="pageSheet"
     >
       <ThemedView style={styles.container}>
-        {" "}
         <ThemedView style={styles.header}>
           <TouchableOpacity onPress={onClose}>
             <ThemedText style={styles.cancelButton}>Cancel</ThemedText>
@@ -544,46 +328,43 @@ export default function BlockedDateModal({
               {saving ? "Saving..." : "Save"}
             </ThemedText>
           </TouchableOpacity>
-        </ThemedView>
+        </ThemedView>{" "}
         <ScrollView style={styles.content}>
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
             <>
-              {" "}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
-                <TouchableOpacity
-                  onPress={() => setShowDatePicker(true)}
-                  style={styles.dateText}
-                >
-                  <ThemedText>
-                    {moment(formData.date).format("MMMM D, YYYY")}
-                  </ThemedText>
-                </TouchableOpacity>
-                {showDatePicker && (
-                  <DateTimePicker
-                    value={formData.date ? new Date(formData.date) : new Date()}
-                    mode="date"
-                    display="default"
-                    onChange={(event, selectedDate) => {
-                      setShowDatePicker(false);
-                      if (selectedDate) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          date: moment(selectedDate).format("YYYY-MM-DD"),
-                        }));
-                      }
-                    }}
-                    minimumDate={new Date()}
-                  />
-                )}
+                <input
+                  type="date"
+                  style={{
+                    backgroundColor: "rgba(255, 255, 255, 0.1)",
+                    borderRadius: 8,
+                    padding: 12,
+                    fontSize: 16,
+                    color: "#333",
+                    borderWidth: 1,
+                    borderColor: "rgba(255, 255, 255, 0.2)",
+                    width: "100%",
+                    border: "1px solid rgba(255, 255, 255, 0.2)",
+                  }}
+                  value={moment(formData.date).format("YYYY-MM-DD")}
+                  onChange={(e) => {
+                    const selectedDate = e.target.value;
+                    if (selectedDate) {
+                      setFormData((prev) => ({ ...prev, date: selectedDate }));
+                    }
+                  }}
+                  min={moment().format("YYYY-MM-DD")} // Prevent selecting past dates
+                />
                 <ThemedText style={styles.dateHelp}>
                   Select a date to block for appointments
                 </ThemedText>
               </ThemedView>
               {currentUser?.role !== "patient" && (
                 <ThemedView style={styles.section}>
+                  {" "}
                   <ThemedText style={styles.label}>Doctor</ThemedText>
                   {doctors.length > 0 ? (
                     <ThemedView style={styles.pickerContainer}>
@@ -741,8 +522,6 @@ const styles = StyleSheet.create({
     padding: 12,
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
   },
   pickerContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
