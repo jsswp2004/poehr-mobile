@@ -49,17 +49,23 @@ interface ClinicEvent {
 
 interface Appointment {
   id?: number;
-  patient_name?: string;
-  doctor_name?: string;
-  appointment_date: string;
-  appointment_time: string;
-  duration: number;
-  status: string;
   title?: string;
+  patient_name?: string;
+  provider_name?: string; // Backend returns this
+  doctor_name?: string; // Keep for backward compatibility
+  appointment_date?: string; // Keep for backward compatibility
+  appointment_time?: string; // Keep for backward compatibility
+  appointment_datetime?: string; // This is what the backend returns
+  duration?: number; // Keep for backward compatibility
+  duration_minutes?: number; // Backend returns this
+  status: string;
   clinic_event_id?: number;
   notes?: string;
-  patient_id: number;
-  doctor_id: number;
+  description?: string; // Backend returns this
+  patient_id?: number; // Keep for backward compatibility
+  doctor_id?: number; // Keep for backward compatibility
+  patient?: number; // Backend returns this
+  provider?: number; // Backend returns this
 }
 
 interface AppointmentModalProps {
@@ -86,6 +92,32 @@ export default function AppointmentModal({
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
+  // Helper function to handle token expiration
+  const handleTokenExpiration = useCallback(
+    async (response: Response, errorData: any) => {
+      if (response.status === 401 && errorData.code === "token_not_valid") {
+        console.log("🔐 Token expired during data loading, clearing storage");
+        await AsyncStorage.removeItem("access_token");
+        await AsyncStorage.removeItem("refresh_token");
+        Alert.alert(
+          "Session Expired",
+          "Your session has expired. Please log in again.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                onClose();
+              },
+            },
+          ]
+        );
+        return true; // Token was expired
+      }
+      return false; // Token was not expired
+    },
+    [onClose]
+  );
+
   // Form state
   const [formData, setFormData] = useState({
     appointment_date: selectedDate || moment().format("YYYY-MM-DD"),
@@ -102,7 +134,22 @@ export default function AppointmentModal({
     setLoading(true);
     try {
       const token = await AsyncStorage.getItem("access_token");
-      if (!token) return;
+      if (!token) {
+        console.log("❌ No token found, user needs to log in");
+        Alert.alert(
+          "Authentication Required",
+          "Please log in to access this feature.",
+          [
+            {
+              text: "OK",
+              onPress: () => {
+                onClose();
+              },
+            },
+          ]
+        );
+        return;
+      }
 
       // Load doctors
       console.log("🔍 Loading doctors - current user role:", currentUser?.role);
@@ -132,6 +179,18 @@ export default function AppointmentModal({
         const errorText = await doctorsResponse.text();
         console.log("❌ Failed to load doctors:", doctorsResponse.status);
         console.log("❌ Error response:", errorText);
+
+        // Check for token expiration
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+
+        if (await handleTokenExpiration(doctorsResponse, errorData)) {
+          return; // Exit early if token was expired
+        }
 
         // If backend is unavailable, provide demo data
         if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
@@ -195,6 +254,18 @@ export default function AppointmentModal({
           const errorText = await patientsResponse.text();
           console.log("❌ Failed to load patients:", patientsResponse.status);
           console.log("❌ Error response:", errorText);
+
+          // Check for token expiration
+          let errorData;
+          try {
+            errorData = JSON.parse(errorText);
+          } catch {
+            errorData = { message: errorText };
+          }
+
+          if (await handleTokenExpiration(patientsResponse, errorData)) {
+            return; // Exit early if token was expired
+          }
 
           // If backend is unavailable, provide demo data
           if (
@@ -267,6 +338,18 @@ export default function AppointmentModal({
         );
         console.log("❌ Error response:", errorText);
 
+        // Check for token expiration
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+
+        if (await handleTokenExpiration(clinicEventsResponse, errorData)) {
+          return; // Exit early if token was expired
+        }
+
         // Provide demo clinic events if backend is unavailable
         const demoClinicEvents = [
           { id: 1, name: "Consultation", description: "General consultation" },
@@ -315,7 +398,7 @@ export default function AppointmentModal({
           id: 2,
           username: "demo_patient2",
           first_name: "Bob",
-          last_name: "Smith",
+          lastName: "Smith",
           email: "bob@demo.com",
         },
         {
@@ -345,7 +428,7 @@ export default function AppointmentModal({
     } finally {
       setLoading(false);
     }
-  }, [currentUser]);
+  }, [currentUser, onClose, handleTokenExpiration]);
 
   useEffect(() => {
     if (visible) {
@@ -356,19 +439,34 @@ export default function AppointmentModal({
       if (appointment) {
         // Editing existing appointment
         console.log("🔍 Editing existing appointment:", appointment);
-        setFormData({
-          appointment_date: appointment.appointment_date
+
+        let appointmentDate, appointmentTime;
+
+        // Handle both old format and new format
+        if (appointment.appointment_datetime) {
+          // Parse from appointment_datetime (backend format)
+          const datetime = moment(appointment.appointment_datetime);
+          appointmentDate = datetime.format("YYYY-MM-DD");
+          appointmentTime = datetime.format("HH:mm");
+        } else {
+          // Use legacy separate fields
+          appointmentDate = appointment.appointment_date
             ? moment(appointment.appointment_date).format("YYYY-MM-DD")
-            : selectedDate || moment().format("YYYY-MM-DD"),
-          appointment_time: appointment.appointment_time
+            : selectedDate || moment().format("YYYY-MM-DD");
+          appointmentTime = appointment.appointment_time
             ? moment(appointment.appointment_time, "HH:mm:ss").format("HH:mm")
-            : "09:00",
-          duration: appointment.duration || 30,
+            : "09:00";
+        }
+
+        setFormData({
+          appointment_date: appointmentDate,
+          appointment_time: appointmentTime,
+          duration: appointment.duration || appointment.duration_minutes || 30,
           status: appointment.status || "pending",
           clinic_event_id: appointment.clinic_event_id || 0,
-          notes: appointment.notes || "",
-          patient_id: appointment.patient_id || 0,
-          doctor_id: appointment.doctor_id || 0,
+          notes: appointment.notes || appointment.description || "",
+          patient_id: appointment.patient_id || appointment.patient || 0,
+          doctor_id: appointment.doctor_id || appointment.provider || 0,
         });
       } else {
         // Creating new appointment
@@ -434,8 +532,86 @@ export default function AppointmentModal({
       return;
     }
 
+    // Double-check that the selected patient and doctor actually exist
+    const selectedPatient = patients.find((p) => p.id === formData.patient_id);
+    const selectedDoctor = doctors.find((d) => d.id === formData.doctor_id);
+    const selectedClinicEvent = clinicEvents.find(
+      (e) => e.id === formData.clinic_event_id
+    );
+
+    console.log("🔍 Validation check:");
+    console.log("  - Selected patient:", selectedPatient);
+    console.log("  - Selected doctor:", selectedDoctor);
+    console.log("  - Selected clinic event:", selectedClinicEvent);
+
+    if (!selectedPatient) {
+      console.log("❌ Invalid patient selection");
+      Alert.alert(
+        "Error",
+        `Invalid patient selection (ID: ${formData.patient_id}). Please select a valid patient.`
+      );
+      return;
+    }
+
+    if (!selectedDoctor) {
+      console.log("❌ Invalid doctor selection");
+      Alert.alert(
+        "Error",
+        `Invalid doctor selection (ID: ${formData.doctor_id}). Please select a valid doctor.`
+      );
+      return;
+    }
+
+    if (!selectedClinicEvent) {
+      console.log("❌ Invalid clinic event selection");
+      Alert.alert(
+        "Error",
+        `Invalid clinic event selection (ID: ${formData.clinic_event_id}). Please select a valid clinic event.`
+      );
+      return;
+    }
+
     console.log("✅ All validation passed, proceeding with save");
 
+    // Show confirmation dialog with selected details
+    const patientName = `${selectedPatient.first_name} ${selectedPatient.last_name}`;
+    const doctorName = `${selectedDoctor.first_name} ${selectedDoctor.last_name}`;
+    const clinicEventName = selectedClinicEvent.name;
+    const appointmentTime = `${formData.appointment_date} at ${formData.appointment_time}`;
+
+    console.log("🔒 === PRE-SAVE CONFIRMATION DIALOG ===");
+    console.log(
+      `🔒 About to show confirmation for: ${patientName} (ID: ${formData.patient_id})`
+    );
+    console.log(`🔒 Doctor: ${doctorName} (ID: ${formData.doctor_id})`);
+    console.log(`🔒 Current formData.patient_id: ${formData.patient_id}`);
+    console.log("🔒 =====================================");
+
+    Alert.alert(
+      "Confirm Appointment",
+      `Please confirm the appointment details:\n\n` +
+        `Patient: ${patientName}\n` +
+        `Doctor: ${doctorName}\n` +
+        `Clinic Event: ${clinicEventName}\n` +
+        `Date & Time: ${appointmentTime}\n` +
+        `Duration: ${formData.duration} minutes`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Save",
+          onPress: async () => {
+            console.log("✅ User confirmed, saving appointment");
+            await performSave();
+          },
+        },
+      ]
+    );
+  };
+
+  const performSave = async () => {
     setSaving(true);
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -445,11 +621,26 @@ export default function AppointmentModal({
         return;
       }
 
+      // Final validation: Re-check that the selected IDs are still valid
+      const finalPatient = patients.find((p) => p.id === formData.patient_id);
+      const finalDoctor = doctors.find((d) => d.id === formData.doctor_id);
+      const finalClinicEvent = clinicEvents.find(
+        (e) => e.id === formData.clinic_event_id
+      );
+
+      if (!finalPatient || !finalDoctor || !finalClinicEvent) {
+        console.log("❌ Final validation failed");
+        console.log("  - Final patient:", finalPatient);
+        console.log("  - Final doctor:", finalDoctor);
+        console.log("  - Final clinic event:", finalClinicEvent);
+        Alert.alert("Error", "Invalid selection detected. Please try again.");
+        setSaving(false);
+        return;
+      }
+
       const appointmentData = {
-        title:
-          clinicEvents.find((event) => event.id === formData.clinic_event_id)
-            ?.name || "Medical Appointment", // Get title from selected clinic event
-        appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00`, // Combine date and time
+        title: finalClinicEvent.name || "Medical Appointment",
+        appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00Z`, // Combine date and time with UTC timezone
         provider: formData.doctor_id, // Use doctor_id as provider
         patient: formData.patient_id,
         duration: formData.duration,
@@ -458,8 +649,26 @@ export default function AppointmentModal({
         notes: formData.notes || "",
       };
 
-      console.log("💾 Saving appointment data:", appointmentData);
-      console.log("💾 Original formData:", formData);
+      console.log("💾 Final appointment data to save:", appointmentData);
+      console.log("💾 Patient details:", finalPatient);
+      console.log("💾 Doctor details:", finalDoctor);
+      console.log("💾 Clinic event details:", finalClinicEvent);
+
+      // ENHANCED DEBUG: Clear confirmation of what's being saved
+      console.log("🎯 === APPOINTMENT SAVE CONFIRMATION ===");
+      console.log(
+        `🎯 Patient being saved: ${finalPatient.first_name} ${finalPatient.last_name} (ID: ${formData.patient_id})`
+      );
+      console.log(
+        `🎯 Doctor being saved: ${finalDoctor.first_name} ${finalDoctor.last_name} (ID: ${formData.doctor_id})`
+      );
+      console.log(
+        `🎯 Clinic event being saved: ${finalClinicEvent.name} (ID: ${formData.clinic_event_id})`
+      );
+      console.log(
+        `🎯 Date/Time being saved: ${appointmentData.appointment_datetime}`
+      );
+      console.log("🎯 =======================================");
 
       const url = appointment
         ? `${API_BASE_URL}/api/appointments/${appointment.id}/`
@@ -488,6 +697,43 @@ export default function AppointmentModal({
       if (response.ok) {
         const responseData = await response.json();
         console.log("✅ Success response:", responseData);
+
+        // BACKEND BUG WORKAROUND: Verify the saved patient matches what we sent
+        const expectedPatientName = `${finalPatient.first_name} ${finalPatient.last_name}`;
+        const actualPatientName = responseData.patient_name;
+
+        if (actualPatientName !== expectedPatientName) {
+          console.log("❌ BACKEND BUG DETECTED:");
+          console.log(`   Expected patient: ${expectedPatientName}`);
+          console.log(`   Backend returned: ${actualPatientName}`);
+          console.log(`   Patient ID sent: ${formData.patient_id}`);
+
+          Alert.alert(
+            "Backend Data Error",
+            `Warning: The backend saved the appointment with an incorrect patient name.\n\n` +
+              `Expected: ${expectedPatientName}\n` +
+              `Got: ${actualPatientName}\n\n` +
+              `This is a backend data consistency issue. The appointment was created but with wrong patient information.`,
+            [
+              {
+                text: "Report Bug",
+                onPress: () => {
+                  console.log("🐛 User requested to report backend bug");
+                  // Could open bug report form or email
+                },
+              },
+              {
+                text: "Continue",
+                onPress: () => {
+                  onSave();
+                  onClose();
+                },
+              },
+            ]
+          );
+          return;
+        }
+
         Alert.alert(
           "Success",
           `Appointment ${appointment ? "updated" : "created"} successfully!`,
@@ -513,6 +759,28 @@ export default function AppointmentModal({
         } catch (parseError) {
           console.log("❌ Could not parse error as JSON:", parseError);
           errorData = { message: errorText };
+        }
+
+        // Handle token expiration
+        if (response.status === 401 && errorData.code === "token_not_valid") {
+          console.log("🔐 Token expired, redirecting to login");
+          await AsyncStorage.removeItem("access_token");
+          await AsyncStorage.removeItem("refresh_token");
+          Alert.alert(
+            "Session Expired",
+            "Your session has expired. Please log in again.",
+            [
+              {
+                text: "OK",
+                onPress: () => {
+                  onClose();
+                  // Navigate to login - you may need to adjust this based on your navigation setup
+                  // router.replace("/login");
+                },
+              },
+            ]
+          );
+          return;
         }
 
         Alert.alert(
@@ -743,35 +1011,85 @@ export default function AppointmentModal({
                   {patients.length > 0 ? (
                     <ThemedView style={styles.pickerContainer}>
                       <Picker
-                        selectedValue={formData.patient_id}
+                        selectedValue={formData.patient_id || 0}
                         onValueChange={(value) => {
                           console.log(
-                            "Patient picker value:",
+                            "🧪 Patient picker onValueChange triggered:"
+                          );
+                          console.log(
+                            "  - Selected value:",
                             value,
                             typeof value
                           );
-                          console.log("Current patients:", patients);
                           console.log(
-                            "Current formData.patient_id:",
+                            "  - Current formData.patient_id:",
                             formData.patient_id
                           );
+                          console.log(
+                            "  - Available patients:",
+                            patients.map((p) => ({
+                              id: p.id,
+                              name: `${p.first_name} ${p.last_name}`,
+                            }))
+                          );
 
-                          // Handle both string and number values
-                          const numericValue =
-                            typeof value === "string"
-                              ? parseInt(value, 10)
-                              : value;
+                          // Handle both string and number values, ensure we get a valid number
+                          let numericValue = 0;
+                          if (typeof value === "string") {
+                            numericValue = parseInt(value, 10);
+                          } else if (typeof value === "number") {
+                            numericValue = value;
+                          }
 
-                          if (
-                            value !== undefined &&
-                            value !== null &&
-                            !isNaN(numericValue)
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              patient_id: numericValue,
-                            }));
-                            console.log("Updated patient_id to:", numericValue);
+                          // Validate that the patient ID actually exists in our patients array
+                          const selectedPatient = patients.find(
+                            (p) => p.id === numericValue
+                          );
+
+                          console.log(
+                            "  - Converted to numeric:",
+                            numericValue
+                          );
+                          console.log("  - Found patient:", selectedPatient);
+
+                          // ENHANCED DEBUGGING: Log the exact patient being selected
+                          if (selectedPatient) {
+                            console.log(
+                              `  - ✅ SELECTING PATIENT: ${selectedPatient.first_name} ${selectedPatient.last_name} (ID: ${selectedPatient.id})`
+                            );
+                          } else if (numericValue === 0) {
+                            console.log(
+                              "  - ℹ️ Clearing patient selection (Select Patient)"
+                            );
+                          } else {
+                            console.log(
+                              `  - ❌ INVALID SELECTION: Patient ID ${numericValue} not found!`
+                            );
+                          }
+
+                          if (numericValue === 0 || selectedPatient) {
+                            // Only update if it's a valid selection (0 for "Select Patient" or a valid patient ID)
+                            setFormData((prev) => {
+                              const newFormData = {
+                                ...prev,
+                                patient_id: numericValue,
+                              };
+                              console.log("  - Updated formData:", newFormData);
+                              console.log(
+                                `  - 🎯 FINAL PATIENT SELECTION: ${
+                                  numericValue === 0
+                                    ? "None"
+                                    : selectedPatient
+                                    ? `${selectedPatient.first_name} ${selectedPatient.last_name} (ID: ${numericValue})`
+                                    : `Unknown patient (ID: ${numericValue})`
+                                }`
+                              );
+                              return newFormData;
+                            });
+                          } else {
+                            console.log(
+                              "  - ❌ Invalid patient ID, ignoring selection"
+                            );
                           }
                         }}
                         style={styles.picker}

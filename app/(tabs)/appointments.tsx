@@ -28,15 +28,30 @@ interface User {
 
 interface Appointment {
   id: number;
+  title: string;
   patient_name: string;
-  doctor_name: string;
-  appointment_date: string;
-  appointment_time: string;
-  duration: number;
+  provider_name?: string; // This is what backend returns
+  doctor_name?: string; // Keep for backward compatibility
+  appointment_date?: string; // Keep for backward compatibility
+  appointment_time?: string; // Keep for backward compatibility
+  appointment_datetime: string; // This is what the backend returns
+  duration?: number; // Keep for backward compatibility
+  duration_minutes: number; // This is what backend returns
   status: string;
   notes?: string;
-  patient_id: number;
-  doctor_id: number;
+  description?: string; // Backend returns this
+  patient_id?: number; // Keep for backward compatibility
+  doctor_id?: number; // Keep for backward compatibility
+  patient: number; // Backend returns this
+  provider: number; // Backend returns this
+  clinic_event?: number;
+  arrived?: boolean;
+  no_show?: boolean;
+  organization?: number;
+  created_at?: string;
+  updated_at?: string;
+  recurrence?: string;
+  recurrence_end_date?: string;
 }
 
 interface BlockedDateDisplay {
@@ -108,8 +123,15 @@ export default function AppointmentsScreen() {
   const loadAppointments = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
-      if (!token) return;
+      if (!token) {
+        console.log("❌ No token found for loading appointments");
+        return;
+      }
 
+      console.log(
+        "🔍 Loading appointments from:",
+        `${API_BASE_URL}/api/appointments/`
+      );
       const response = await fetch(`${API_BASE_URL}/api/appointments/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -117,14 +139,24 @@ export default function AppointmentsScreen() {
         },
       });
 
+      console.log("🔍 Appointments response status:", response.status);
+
       if (response.ok) {
         const data = await response.json();
+        console.log("🔍 Appointments data received:", data);
+        console.log("🔍 Number of appointments:", data.length || 0);
+        console.log("🔍 First appointment sample:", data[0]);
         setAppointments(data);
       } else {
-        console.error("Failed to load appointments:", response.status);
+        const errorText = await response.text();
+        console.error(
+          "❌ Failed to load appointments:",
+          response.status,
+          errorText
+        );
       }
     } catch (error) {
-      console.error("Error loading appointments:", error);
+      console.error("❌ Error loading appointments:", error);
     }
   };
   const loadDoctors = async () => {
@@ -280,19 +312,29 @@ export default function AppointmentsScreen() {
 
     // Mark appointment dates
     (appointments || []).forEach((appointment) => {
-      if (appointment && appointment.appointment_date) {
-        const date = moment(appointment.appointment_date).format("YYYY-MM-DD");
-        if (marked[date]) {
-          marked[date] = {
-            ...marked[date],
-            marked: true,
-            dotColor: "#2ecc71",
-          };
-        } else {
-          marked[date] = {
-            marked: true,
-            dotColor: "#2ecc71",
-          };
+      if (appointment) {
+        let date;
+        if (appointment.appointment_datetime) {
+          // Extract date from appointment_datetime
+          date = moment(appointment.appointment_datetime).format("YYYY-MM-DD");
+        } else if (appointment.appointment_date) {
+          // Use legacy appointment_date field
+          date = moment(appointment.appointment_date).format("YYYY-MM-DD");
+        }
+
+        if (date) {
+          if (marked[date]) {
+            marked[date] = {
+              ...marked[date],
+              marked: true,
+              dotColor: "#2ecc71",
+            };
+          } else {
+            marked[date] = {
+              marked: true,
+              dotColor: "#2ecc71",
+            };
+          }
         }
       }
     });
@@ -319,13 +361,46 @@ export default function AppointmentsScreen() {
     return marked;
   };
   const getAppointmentsForDate = (date: string) => {
+    console.log("🔍 Getting appointments for date:", date);
+    console.log("🔍 Total appointments available:", appointments?.length || 0);
+
     if (!date || !appointments) return [];
-    return appointments.filter(
-      (appointment) =>
-        appointment &&
-        appointment.appointment_date &&
-        moment(appointment.appointment_date).format("YYYY-MM-DD") === date
-    );
+
+    const filtered = appointments.filter((appointment) => {
+      if (!appointment) return false;
+
+      // Handle both old format (appointment_date) and new format (appointment_datetime)
+      let appointmentDate;
+      if (appointment.appointment_datetime) {
+        // Extract date from appointment_datetime (format: 2025-06-26T19:30:00+00:00)
+        appointmentDate = moment(appointment.appointment_datetime).format(
+          "YYYY-MM-DD"
+        );
+        console.log(
+          `🔍 Appointment ${appointment.id}: datetime=${appointment.appointment_datetime}, extracted date=${appointmentDate}`
+        );
+      } else if (appointment.appointment_date) {
+        // Use legacy appointment_date field
+        appointmentDate = moment(appointment.appointment_date).format(
+          "YYYY-MM-DD"
+        );
+        console.log(
+          `🔍 Appointment ${appointment.id}: legacy date=${appointment.appointment_date}, formatted=${appointmentDate}`
+        );
+      } else {
+        console.log(`🔍 Appointment ${appointment.id}: no date field found`);
+        return false;
+      }
+
+      const matches = appointmentDate === date;
+      console.log(
+        `🔍 Appointment ${appointment.id}: ${appointmentDate} === ${date} ? ${matches}`
+      );
+      return matches;
+    });
+
+    console.log("🔍 Filtered appointments for date:", filtered.length);
+    return filtered;
   };
 
   const getDoctorNameById = (doctorId?: number): string => {
@@ -596,74 +671,128 @@ export default function AppointmentsScreen() {
             <ThemedText style={styles.sectionTitle}>
               📅 Appointments ({dayAppointments.length})
             </ThemedText>
-            {dayAppointments.map((appointment) => (
-              <ThemedView key={appointment.id} style={styles.appointmentItem}>
-                <ThemedView style={styles.appointmentHeader}>
-                  <ThemedText style={styles.appointmentTime}>
-                    {appointment.appointment_time
-                      ? moment(appointment.appointment_time, "HH:mm:ss").format(
-                          "h:mm A"
-                        )
-                      : "Time not set"}
-                  </ThemedText>
-                  <ThemedText
-                    style={[
-                      styles.status,
-                      appointment.status === "confirmed" &&
-                        styles.statusConfirmed,
-                      appointment.status === "pending" && styles.statusPending,
-                      appointment.status === "cancelled" &&
-                        styles.statusCancelled,
-                    ]}
-                  >
-                    {(appointment.status || "PENDING").toUpperCase()}
-                  </ThemedText>
-                </ThemedView>
-
-                <ThemedText style={styles.appointmentName}>
-                  {user?.role === "patient"
-                    ? `Dr. ${appointment.doctor_name || "Unknown"}`
-                    : appointment.patient_name || "Unknown Patient"}
-                </ThemedText>
-
-                <ThemedText style={styles.appointmentDuration}>
-                  Duration: {appointment.duration || 30} minutes
-                </ThemedText>
-
-                {appointment.notes && (
-                  <ThemedText style={styles.appointmentNotes}>
-                    Notes: {appointment.notes}
-                  </ThemedText>
-                )}
-
-                {(user?.role === "doctor" || user?.role === "admin") && (
-                  <ThemedView style={styles.appointmentActions}>
-                    <TouchableOpacity
-                      style={styles.editButton}
-                      onPress={() => handleEditAppointment(appointment)}
+            {dayAppointments.map((appointment) => {
+              console.log(
+                "🔍 Rendering appointment:",
+                appointment.id,
+                appointment.title
+              );
+              return (
+                <ThemedView key={appointment.id} style={styles.appointmentItem}>
+                  <ThemedView style={styles.appointmentHeader}>
+                    <ThemedText style={styles.appointmentTime}>
+                      {appointment.appointment_datetime
+                        ? moment(appointment.appointment_datetime).format(
+                            "h:mm A"
+                          )
+                        : appointment.appointment_time
+                        ? moment(
+                            appointment.appointment_time,
+                            "HH:mm:ss"
+                          ).format("h:mm A")
+                        : "Time not set"}
+                    </ThemedText>
+                    <ThemedText
+                      style={[
+                        styles.status,
+                        appointment.status === "confirmed" &&
+                          styles.statusConfirmed,
+                        appointment.status === "pending" &&
+                          styles.statusPending,
+                        appointment.status === "cancelled" &&
+                          styles.statusCancelled,
+                      ]}
                     >
-                      <ThemedText style={styles.editButtonText}>
-                        Edit
-                      </ThemedText>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.deleteButton}
-                      onPress={() => handleDeleteAppointment(appointment)}
-                    >
-                      <ThemedText style={styles.deleteButtonText}>
-                        Delete
-                      </ThemedText>
-                    </TouchableOpacity>{" "}
+                      {(appointment.status || "PENDING").toUpperCase()}
+                    </ThemedText>
                   </ThemedView>
-                )}
+
+                  <ThemedText style={styles.appointmentName}>
+                    {user?.role === "patient"
+                      ? appointment.provider_name ||
+                        appointment.doctor_name ||
+                        "Unknown Doctor"
+                      : appointment.patient_name || "Unknown Patient"}
+                  </ThemedText>
+
+                  {appointment.title && (
+                    <ThemedText style={styles.appointmentEvent}>
+                      🏥 {appointment.title}
+                    </ThemedText>
+                  )}
+
+                  <ThemedText style={styles.appointmentDuration}>
+                    Duration:{" "}
+                    {appointment.duration_minutes || appointment.duration || 30}{" "}
+                    minutes
+                  </ThemedText>
+
+                  {(appointment.notes || appointment.description) && (
+                    <ThemedText style={styles.appointmentNotes}>
+                      Notes: {appointment.notes || appointment.description}
+                    </ThemedText>
+                  )}
+
+                  {(user?.role === "doctor" || user?.role === "admin") && (
+                    <ThemedView style={styles.appointmentActions}>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={() => handleEditAppointment(appointment)}
+                      >
+                        <ThemedText style={styles.editButtonText}>
+                          Edit
+                        </ThemedText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={() => handleDeleteAppointment(appointment)}
+                      >
+                        <ThemedText style={styles.deleteButtonText}>
+                          Delete
+                        </ThemedText>
+                      </TouchableOpacity>{" "}
+                    </ThemedView>
+                  )}
+                </ThemedView>
+              );
+            })}
+
+            {/* Action buttons for creating appointments and blocking dates */}
+            {user?.role !== "patient" && (
+              <ThemedView style={styles.actionButtons}>
+                <TouchableOpacity
+                  style={styles.createButton}
+                  onPress={handleCreateAppointment}
+                >
+                  <ThemedText style={styles.createButtonText}>
+                    + Create Appointment
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.blockButton}
+                  onPress={handleBlockDate}
+                >
+                  <ThemedText style={styles.blockButtonText}>
+                    🚫 Block Date
+                  </ThemedText>
+                </TouchableOpacity>
               </ThemedView>
-            ))}
+            )}
           </ThemedView>
         ) : (
           <ThemedView style={styles.noAppointments}>
             <ThemedText>No appointments scheduled for this date.</ThemedText>
             <ThemedText style={styles.debugText}>
               Current user role: {user?.role || "No role"}
+            </ThemedText>
+            <ThemedText style={styles.debugText}>
+              Selected date: {selectedDate}
+            </ThemedText>
+            <ThemedText style={styles.debugText}>
+              Total appointments in system: {appointments?.length || 0}
+            </ThemedText>
+            <ThemedText style={styles.debugText}>
+              Appointments for this date: {dayAppointments.length}
             </ThemedText>
             {user?.role !== "patient" && (
               <ThemedView style={styles.actionButtons}>
@@ -871,6 +1000,12 @@ const styles = StyleSheet.create({
   appointmentName: {
     fontSize: 16,
     fontWeight: "600",
+    marginBottom: 5,
+  },
+  appointmentEvent: {
+    fontSize: 14,
+    fontWeight: "500",
+    color: "#3498db",
     marginBottom: 5,
   },
   appointmentDuration: {
