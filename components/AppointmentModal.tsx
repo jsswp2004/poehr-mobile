@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
@@ -40,6 +41,12 @@ interface Patient {
   email: string;
 }
 
+interface ClinicEvent {
+  id: number;
+  name: string;
+  description?: string;
+}
+
 interface Appointment {
   id?: number;
   patient_name?: string;
@@ -48,6 +55,8 @@ interface Appointment {
   appointment_time: string;
   duration: number;
   status: string;
+  title?: string;
+  clinic_event_id?: number;
   notes?: string;
   patient_id: number;
   doctor_id: number;
@@ -72,8 +81,10 @@ export default function AppointmentModal({
 }: AppointmentModalProps) {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
+  const [clinicEvents, setClinicEvents] = useState<ClinicEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -81,6 +92,7 @@ export default function AppointmentModal({
     appointment_time: "09:00",
     duration: 30,
     status: "pending",
+    clinic_event_id: 0,
     notes: "",
     patient_id: 0,
     doctor_id: 0,
@@ -120,7 +132,30 @@ export default function AppointmentModal({
         const errorText = await doctorsResponse.text();
         console.log("❌ Failed to load doctors:", doctorsResponse.status);
         console.log("❌ Error response:", errorText);
-        setDoctors([]);
+
+        // If backend is unavailable, provide demo data
+        if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
+          const demoDoctors = [
+            {
+              id: 1,
+              username: "demo_doc1",
+              first_name: "John",
+              last_name: "Smith",
+              email: "john@demo.com",
+            },
+            {
+              id: 2,
+              username: "demo_doc2",
+              first_name: "Jane",
+              last_name: "Doe",
+              email: "jane@demo.com",
+            },
+          ];
+          console.log("🔍 Using demo doctors:", demoDoctors);
+          setDoctors(demoDoctors);
+        } else {
+          setDoctors([]);
+        }
       }
 
       // Load patients (only for doctors and admins)
@@ -150,21 +185,163 @@ export default function AppointmentModal({
         if (patientsResponse.ok) {
           const patientsData = await patientsResponse.json();
           console.log("🔍 Patients data received:", patientsData);
-          console.log("🔍 Number of patients:", patientsData?.length || 0);
-          setPatients(patientsData || []);
+
+          // Handle paginated response - extract results array
+          const patientsArray = patientsData.results || patientsData || [];
+          console.log("🔍 Number of patients:", patientsArray.length);
+          console.log("🔍 Patients array:", patientsArray);
+          setPatients(patientsArray);
         } else {
           const errorText = await patientsResponse.text();
           console.log("❌ Failed to load patients:", patientsResponse.status);
           console.log("❌ Error response:", errorText);
-          setPatients([]);
+
+          // If backend is unavailable, provide demo data
+          if (
+            patientsResponse.status >= 500 ||
+            patientsResponse.status === 404
+          ) {
+            const demoPatients = [
+              {
+                id: 1,
+                username: "demo_patient1",
+                first_name: "Alice",
+                last_name: "Johnson",
+                email: "alice@demo.com",
+              },
+              {
+                id: 2,
+                username: "demo_patient2",
+                first_name: "Bob",
+                last_name: "Smith",
+                email: "bob@demo.com",
+              },
+              {
+                id: 3,
+                username: "demo_patient3",
+                first_name: "Carol",
+                last_name: "Davis",
+                email: "carol@demo.com",
+              },
+            ];
+            console.log("🔍 Using demo patients:", demoPatients);
+            setPatients(demoPatients);
+          } else {
+            setPatients([]);
+          }
         }
       } else {
         console.log("ℹ️ Skipping patient loading - user role is patient");
       }
+
+      // Load clinic events
+      console.log("🔍 Loading clinic events");
+      const clinicEventsResponse = await fetch(
+        `${API_BASE_URL}/api/clinic-events/`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      console.log(
+        "🔍 Clinic events response status:",
+        clinicEventsResponse.status
+      );
+
+      if (clinicEventsResponse.ok) {
+        const clinicEventsData = await clinicEventsResponse.json();
+        console.log("🔍 Clinic events data received:", clinicEventsData);
+
+        // Handle paginated response if needed
+        const eventsArray = clinicEventsData.results || clinicEventsData || [];
+        console.log("🔍 Number of clinic events:", eventsArray.length);
+        setClinicEvents(eventsArray);
+      } else {
+        const errorText = await clinicEventsResponse.text();
+        console.log(
+          "❌ Failed to load clinic events:",
+          clinicEventsResponse.status
+        );
+        console.log("❌ Error response:", errorText);
+
+        // Provide demo clinic events if backend is unavailable
+        const demoClinicEvents = [
+          { id: 1, name: "Consultation", description: "General consultation" },
+          { id: 2, name: "Checkup", description: "Regular health checkup" },
+          { id: 3, name: "Follow-up", description: "Follow-up appointment" },
+          {
+            id: 4,
+            name: "Vaccination",
+            description: "Vaccination appointment",
+          },
+          { id: 5, name: "Lab Results", description: "Lab results review" },
+        ];
+        console.log("🔍 Using demo clinic events:", demoClinicEvents);
+        setClinicEvents(demoClinicEvents);
+      }
     } catch (error) {
       console.error("Error loading users data:", error);
-      setDoctors([]);
-      setPatients([]);
+
+      // Provide demo data on network error
+      const demoDoctors = [
+        {
+          id: 1,
+          username: "demo_doc1",
+          first_name: "John",
+          last_name: "Smith",
+          email: "john@demo.com",
+        },
+        {
+          id: 2,
+          username: "demo_doc2",
+          first_name: "Jane",
+          last_name: "Doe",
+          email: "jane@demo.com",
+        },
+      ];
+
+      const demoPatients = [
+        {
+          id: 1,
+          username: "demo_patient1",
+          first_name: "Alice",
+          last_name: "Johnson",
+          email: "alice@demo.com",
+        },
+        {
+          id: 2,
+          username: "demo_patient2",
+          first_name: "Bob",
+          last_name: "Smith",
+          email: "bob@demo.com",
+        },
+        {
+          id: 3,
+          username: "demo_patient3",
+          first_name: "Carol",
+          last_name: "Davis",
+          email: "carol@demo.com",
+        },
+      ];
+
+      console.log("🔍 Network error - using demo data");
+      setDoctors(demoDoctors);
+      if (currentUser?.role !== "patient") {
+        setPatients(demoPatients);
+      }
+
+      // Set demo clinic events
+      const demoClinicEvents = [
+        { id: 1, name: "Consultation", description: "General consultation" },
+        { id: 2, name: "Checkup", description: "Regular health checkup" },
+        { id: 3, name: "Follow-up", description: "Follow-up appointment" },
+        { id: 4, name: "Vaccination", description: "Vaccination appointment" },
+        { id: 5, name: "Lab Results", description: "Lab results review" },
+      ];
+      setClinicEvents(demoClinicEvents);
     } finally {
       setLoading(false);
     }
@@ -172,10 +349,13 @@ export default function AppointmentModal({
 
   useEffect(() => {
     if (visible) {
+      console.log("🔍 AppointmentModal opened, loading users data...");
+      console.log("🔍 Current user:", currentUser);
       loadUsersData();
 
       if (appointment) {
         // Editing existing appointment
+        console.log("🔍 Editing existing appointment:", appointment);
         setFormData({
           appointment_date: appointment.appointment_date
             ? moment(appointment.appointment_date).format("YYYY-MM-DD")
@@ -185,17 +365,20 @@ export default function AppointmentModal({
             : "09:00",
           duration: appointment.duration || 30,
           status: appointment.status || "pending",
+          clinic_event_id: appointment.clinic_event_id || 0,
           notes: appointment.notes || "",
           patient_id: appointment.patient_id || 0,
           doctor_id: appointment.doctor_id || 0,
         });
       } else {
         // Creating new appointment
+        console.log("🔍 Creating new appointment");
         setFormData({
           appointment_date: selectedDate || moment().format("YYYY-MM-DD"),
           appointment_time: "09:00",
           duration: 30,
           status: "pending",
+          clinic_event_id: 0,
           notes: "",
           patient_id: 0,
           doctor_id: currentUser?.role === "doctor" ? currentUser.user_id : 0,
@@ -204,9 +387,28 @@ export default function AppointmentModal({
     }
   }, [visible, appointment, selectedDate, currentUser, loadUsersData]);
 
+  const handleDateChange = (event: any, selectedDate?: Date) => {
+    setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS, close on Android
+    if (selectedDate) {
+      const formattedDate = moment(selectedDate).format("YYYY-MM-DD");
+      setFormData((prev) => ({
+        ...prev,
+        appointment_date: formattedDate,
+      }));
+      console.log("📅 Date changed to:", formattedDate);
+    }
+  };
+
   const handleSave = async () => {
+    console.log("💾 handleSave called");
+    console.log("💾 Current formData:", formData);
+    console.log("💾 Patients array:", patients);
+    console.log("💾 Doctors array:", doctors);
+    console.log("💾 Current user:", currentUser);
+
     // Check if we have patients and doctors available
     if (patients.length === 0 || doctors.length === 0) {
+      console.log("❌ Missing patients or doctors data");
       Alert.alert(
         "Demo Mode",
         `Missing data to create appointments:\n\n${
@@ -219,10 +421,20 @@ export default function AppointmentModal({
       return;
     }
 
-    if (!formData.patient_id || !formData.doctor_id) {
-      Alert.alert("Error", "Please select both patient and doctor");
+    if (
+      !formData.patient_id ||
+      !formData.doctor_id ||
+      !formData.clinic_event_id
+    ) {
+      console.log("❌ Missing required fields");
+      console.log("❌ patient_id:", formData.patient_id);
+      console.log("❌ doctor_id:", formData.doctor_id);
+      console.log("❌ clinic_event_id:", formData.clinic_event_id);
+      Alert.alert("Error", "Please select patient, doctor, and clinic event");
       return;
     }
+
+    console.log("✅ All validation passed, proceeding with save");
 
     setSaving(true);
     try {
@@ -234,15 +446,29 @@ export default function AppointmentModal({
       }
 
       const appointmentData = {
-        ...formData,
-        appointment_time: formData.appointment_time + ":00", // Add seconds
+        title:
+          clinicEvents.find((event) => event.id === formData.clinic_event_id)
+            ?.name || "Medical Appointment", // Get title from selected clinic event
+        appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00`, // Combine date and time
+        provider: formData.doctor_id, // Use doctor_id as provider
+        patient: formData.patient_id,
+        duration: formData.duration,
+        status: formData.status,
+        clinic_event: formData.clinic_event_id,
+        notes: formData.notes || "",
       };
+
+      console.log("💾 Saving appointment data:", appointmentData);
+      console.log("💾 Original formData:", formData);
 
       const url = appointment
         ? `${API_BASE_URL}/api/appointments/${appointment.id}/`
         : `${API_BASE_URL}/api/appointments/`;
 
       const method = appointment ? "PUT" : "POST";
+
+      console.log("💾 Request URL:", url);
+      console.log("💾 Request method:", method);
 
       const response = await fetch(url, {
         method,
@@ -253,7 +479,15 @@ export default function AppointmentModal({
         body: JSON.stringify(appointmentData),
       });
 
+      console.log("💾 Response status:", response.status);
+      console.log(
+        "💾 Response headers:",
+        Object.fromEntries(response.headers.entries())
+      );
+
       if (response.ok) {
+        const responseData = await response.json();
+        console.log("✅ Success response:", responseData);
         Alert.alert(
           "Success",
           `Appointment ${appointment ? "updated" : "created"} successfully!`,
@@ -268,8 +502,24 @@ export default function AppointmentModal({
           ]
         );
       } else {
-        const errorData = await response.json();
-        Alert.alert("Error", errorData.message || "Failed to save appointment");
+        const errorText = await response.text();
+        console.log("❌ Error response status:", response.status);
+        console.log("❌ Error response text:", errorText);
+
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+          console.log("❌ Parsed error data:", errorData);
+        } catch (parseError) {
+          console.log("❌ Could not parse error as JSON:", parseError);
+          errorData = { message: errorText };
+        }
+
+        Alert.alert(
+          "Error",
+          errorData.message ||
+            `Failed to save appointment (${response.status}): ${errorText}`
+        );
       }
     } catch (error) {
       console.error("Error saving appointment:", error);
@@ -294,6 +544,7 @@ export default function AppointmentModal({
     }
   };
 
+  // Generate time slots from 8 AM to 5 PM in 30-minute intervals
   const timeSlots = [];
   for (let hour = 8; hour <= 17; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
@@ -324,41 +575,95 @@ export default function AppointmentModal({
             >
               {saving ? "Saving..." : "Save"}
             </ThemedText>
-          </TouchableOpacity>{" "}
+          </TouchableOpacity>
         </ThemedView>
+
         <ScrollView style={styles.content}>
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
             <>
+              {/* Date Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Date</ThemedText>
-                <input
-                  type="date"
-                  style={{
-                    backgroundColor: "rgba(255, 255, 255, 0.1)",
-                    borderRadius: 8,
-                    padding: 12,
-                    fontSize: 16,
-                    color: "#333",
-                    width: "100%",
-                    border: "1px solid rgba(255, 255, 255, 0.2)",
-                  }}
-                  value={
-                    formData.appointment_date || moment().format("YYYY-MM-DD")
-                  }
-                  onChange={(e) => {
-                    const selectedDate = e.target.value;
-                    if (selectedDate) {
-                      setFormData((prev) => ({
-                        ...prev,
-                        appointment_date: selectedDate,
-                      }));
-                    }
-                  }}
-                  min={moment().format("YYYY-MM-DD")} // Prevent selecting past dates
-                />
+                <TouchableOpacity
+                  style={styles.dateInput}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <ThemedText style={styles.dateText}>
+                    {moment(formData.appointment_date).format("MMMM D, YYYY")}
+                  </ThemedText>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={new Date(formData.appointment_date)}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={handleDateChange}
+                    minimumDate={new Date()}
+                  />
+                )}
               </ThemedView>
+
+              {/* Clinic Event Section */}
+              <ThemedView style={styles.section}>
+                <ThemedText style={styles.label}>Clinic Event</ThemedText>
+                {clinicEvents.length > 0 ? (
+                  <ThemedView style={styles.pickerContainer}>
+                    <Picker
+                      selectedValue={formData.clinic_event_id}
+                      onValueChange={(value) => {
+                        console.log(
+                          "Clinic event picker value:",
+                          value,
+                          typeof value
+                        );
+
+                        // Handle both string and number values
+                        const numericValue =
+                          typeof value === "string"
+                            ? parseInt(value, 10)
+                            : value;
+
+                        if (
+                          value !== undefined &&
+                          value !== null &&
+                          !isNaN(numericValue)
+                        ) {
+                          setFormData((prev) => ({
+                            ...prev,
+                            clinic_event_id: numericValue,
+                          }));
+                          console.log(
+                            "Updated clinic_event_id to:",
+                            numericValue
+                          );
+                        }
+                      }}
+                      style={styles.picker}
+                    >
+                      <Picker.Item label="Select Clinic Event" value={0} />
+                      {clinicEvents.map((event) => (
+                        <Picker.Item
+                          key={event.id}
+                          label={event.name}
+                          value={event.id}
+                        />
+                      ))}
+                    </Picker>
+                  </ThemedView>
+                ) : (
+                  <ThemedView style={styles.pickerContainer}>
+                    <ThemedText style={styles.dateText}>
+                      No clinic events available. Connect to backend to load
+                      data.
+                    </ThemedText>
+                  </ThemedView>
+                )}
+              </ThemedView>
+
+              {/* Time Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Time</ThemedText>
                 <ThemedView style={styles.pickerContainer}>
@@ -388,6 +693,8 @@ export default function AppointmentModal({
                   </Picker>
                 </ThemedView>
               </ThemedView>
+
+              {/* Duration Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Duration (minutes)</ThemedText>
                 <ThemedView style={styles.pickerContainer}>
@@ -425,21 +732,28 @@ export default function AppointmentModal({
                         value={duration}
                       />
                     ))}
-                  </Picker>{" "}
+                  </Picker>
                 </ThemedView>
               </ThemedView>
+
+              {/* Patient Section (only for non-patients) */}
               {currentUser?.role !== "patient" && (
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Patient</ThemedText>
                   {patients.length > 0 ? (
                     <ThemedView style={styles.pickerContainer}>
                       <Picker
-                        selectedValue={formData.patient_id || 0}
+                        selectedValue={formData.patient_id}
                         onValueChange={(value) => {
                           console.log(
                             "Patient picker value:",
                             value,
                             typeof value
+                          );
+                          console.log("Current patients:", patients);
+                          console.log(
+                            "Current formData.patient_id:",
+                            formData.patient_id
                           );
 
                           // Handle both string and number values
@@ -470,6 +784,9 @@ export default function AppointmentModal({
                               : patient.username
                               ? patient.username
                               : `Patient ${patient.id}`;
+                          console.log(
+                            `Rendering patient picker item: ${patientLabel} (ID: ${patient.id})`
+                          );
                           return (
                             <Picker.Item
                               key={patient.id}
@@ -489,6 +806,8 @@ export default function AppointmentModal({
                   )}
                 </ThemedView>
               )}
+
+              {/* Doctor Section (only for non-doctors) */}
               {currentUser?.role !== "doctor" && (
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Doctor</ThemedText>
@@ -550,6 +869,8 @@ export default function AppointmentModal({
                   )}
                 </ThemedView>
               )}
+
+              {/* Status Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Status</ThemedText>
                 <ThemedView style={styles.pickerContainer}>
@@ -570,11 +891,14 @@ export default function AppointmentModal({
                   </Picker>
                 </ThemedView>
               </ThemedView>
+
+              {/* Notes Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Notes</ThemedText>
                 <TextInput
                   style={styles.textInput}
                   placeholder="Add notes (optional)"
+                  placeholderTextColor="#999"
                   value={formData.notes || ""}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, notes: text || "" }))
@@ -634,6 +958,12 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
   },
+  dateInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
   pickerContainer: {
     backgroundColor: "rgba(255, 255, 255, 0.1)",
     borderRadius: 8,
@@ -649,5 +979,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     minHeight: 100,
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
+  },
+  singleLineTextInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: "#333",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.2)",
   },
 });

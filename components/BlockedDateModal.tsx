@@ -68,51 +68,13 @@ export default function BlockedDateModal({
   });
 
   const loadDoctors = useCallback(async () => {
-    console.log(
-      "🚀 loadDoctors called, visible:",
-      visible,
-      "currentUser:",
-      currentUser?.role
-    );
     setLoading(true);
 
     try {
       const token = await AsyncStorage.getItem("access_token");
       if (!token) {
-        console.log("❌ No auth token found for loading doctors");
         setDoctors([]);
         return;
-      }
-
-      console.log(
-        "🔑 Using token (first 20 chars):",
-        token.substring(0, 20) + "..."
-      );
-      console.log("🔑 Token length:", token.length);
-
-      // Load doctors - same logic as AppointmentModal
-      console.log(
-        "🔍 Loading doctors for blocked date - current user role:",
-        currentUser?.role
-      );
-      console.log(
-        "🔍 Making request to:",
-        `${API_BASE_URL}/api/users/doctors/`
-      );
-      console.log("🔍 API_BASE_URL:", API_BASE_URL);
-
-      // Test basic connectivity first
-      console.log("🧪 Testing basic connectivity to API...");
-      try {
-        const testResponse = await fetch(`${API_BASE_URL}/api/`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        });
-        console.log("🧪 Basic API test status:", testResponse.status);
-      } catch (testError) {
-        console.log("🧪 Basic API test failed:", testError);
       }
 
       const doctorsResponse = await fetch(
@@ -125,39 +87,12 @@ export default function BlockedDateModal({
         }
       );
 
-      console.log("🔍 Doctors response status:", doctorsResponse.status);
-      console.log("🔍 Doctors response headers:", doctorsResponse.headers);
-
       if (doctorsResponse.ok) {
         const doctorsData = await doctorsResponse.json();
-        console.log("🔍 Doctors data received:", doctorsData);
-        console.log("🔍 Number of doctors:", doctorsData?.length || 0);
-        console.log("🔍 First doctor sample:", doctorsData?.[0]);
         setDoctors(doctorsData || []);
-
-        // Debug state update
-        console.log(
-          "✅ Updated doctors state with",
-          doctorsData?.length || 0,
-          "doctors"
-        );
       } else {
-        const errorText = await doctorsResponse.text();
-        console.log("❌ Failed to load doctors:", doctorsResponse.status);
-        console.log("❌ Error response:", errorText);
-        console.log("❌ Response type:", typeof errorText);
-
-        // Try to parse error as JSON for more details
-        try {
-          const errorJson = JSON.parse(errorText);
-          console.log("❌ Parsed error:", errorJson);
-        } catch (parseError) {
-          console.log("❌ Could not parse error as JSON:", parseError);
-        }
-
         // If backend is unavailable, provide demo data
         if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
-          console.log("🎭 Backend unavailable, using demo doctors");
           const demoDoctors = [
             {
               id: 1,
@@ -186,26 +121,7 @@ export default function BlockedDateModal({
     } catch (error) {
       console.error("❌ Network error loading doctors:", error);
 
-      // Type-safe error handling
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-      const errorName = error instanceof Error ? error.name : "Unknown";
-
-      console.error("❌ Error details:", {
-        message: errorMessage,
-        name: errorName,
-        error: error,
-      });
-
-      // Check if this is a network connectivity issue
-      if (
-        errorMessage?.includes("Network request failed") ||
-        errorMessage?.includes("fetch")
-      ) {
-        console.log("🌐 This appears to be a network connectivity issue");
-      }
       // Provide demo data on network error
-      console.log("🎭 Network error, using demo doctors");
       const demoDoctors = [
         {
           id: 1,
@@ -213,7 +129,12 @@ export default function BlockedDateModal({
           first_name: "John",
           last_name: "Smith",
         },
-        { id: 2, username: "demo_doc2", first_name: "Jane", last_name: "Doe" },
+        {
+          id: 2,
+          username: "demo_doc2",
+          first_name: "Jane",
+          last_name: "Doe",
+        },
         {
           id: 3,
           username: "demo_doc3",
@@ -225,7 +146,7 @@ export default function BlockedDateModal({
     } finally {
       setLoading(false);
     }
-  }, [currentUser, visible]);
+  }, []);
 
   useEffect(() => {
     if (visible) {
@@ -268,22 +189,14 @@ export default function BlockedDateModal({
 
       const method = blockedDate ? "PUT" : "POST";
 
-      // Convert the form data to match the Availability model
       const availabilityData = {
         doctor: formData.doctor_id,
-        start_time: `${formData.date}T00:00:00Z`, // Start of the day
-        end_time: `${formData.date}T23:59:59Z`, // End of the day
+        start_time: `${formData.date}T00:00:00Z`,
+        end_time: `${formData.date}T23:59:59Z`,
         is_blocked: true,
         block_type: formData.reason || "Other",
         recurrence: "none",
       };
-
-      console.log("💾 Saving blocked date:", method, url);
-      console.log("💾 Data:", availabilityData);
-      console.log("💾 Selected doctor info:", {
-        doctor_id: formData.doctor_id,
-        doctor_name: doctors.find((d) => d.id === formData.doctor_id),
-      });
 
       const response = await fetch(url, {
         method,
@@ -293,8 +206,6 @@ export default function BlockedDateModal({
         },
         body: JSON.stringify(availabilityData),
       });
-
-      console.log("💾 Save response status:", response.status);
 
       if (response.ok) {
         Alert.alert(
@@ -322,7 +233,6 @@ export default function BlockedDateModal({
         );
       } else {
         const errorText = await response.text();
-        console.log("❌ Save error response:", errorText);
 
         if (response.status === 404) {
           Alert.alert(
@@ -334,9 +244,8 @@ export default function BlockedDateModal({
               {
                 text: "View Calendar",
                 onPress: () => {
-                  onSave(); // Refresh the data
-                  onClose(); // Close the modal
-                  // Navigate back to appointments page
+                  onSave();
+                  onClose();
                   setTimeout(() => {
                     try {
                       router.replace("/(tabs)/appointments");
@@ -372,9 +281,8 @@ export default function BlockedDateModal({
           {
             text: "View Calendar",
             onPress: () => {
-              onSave(); // Refresh the data
-              onClose(); // Close the modal
-              // Navigate back to appointments page
+              onSave();
+              onClose();
               setTimeout(() => {
                 try {
                   router.replace("/(tabs)/appointments");
@@ -390,21 +298,8 @@ export default function BlockedDateModal({
       setSaving(false);
     }
   };
-  const commonReasons = ["Lunch", "Meeting", "Vacation", "On Leave", "Other"];
 
-  // Debug render
-  console.log("🎨 Rendering BlockedDateModal...");
-  console.log(
-    "🎨 Current state - loading:",
-    loading,
-    "doctors.length:",
-    doctors.length
-  );
-  console.log("🎨 Current user role:", currentUser?.role);
-  console.log(
-    "🎨 Should show doctor section:",
-    currentUser?.role !== "patient"
-  );
+  const commonReasons = ["Lunch", "Meeting", "Vacation", "On Leave", "Other"];
 
   return (
     <Modal
@@ -466,7 +361,6 @@ export default function BlockedDateModal({
                       <TouchableOpacity
                         style={styles.customPickerButton}
                         onPress={() => {
-                          console.log("🎨 Doctor picker button pressed");
                           setShowDoctorPicker(!showDoctorPicker);
                         }}
                       >
@@ -497,12 +391,7 @@ export default function BlockedDateModal({
                                 : doctor.username
                                 ? doctor.username
                                 : `Doctor ${doctor.id}`;
-                            console.log(
-                              "🎨 Adding dropdown option:",
-                              doctorLabel,
-                              "ID:",
-                              doctor.id
-                            );
+
                             return (
                               <TouchableOpacity
                                 key={doctor.id}
@@ -512,12 +401,6 @@ export default function BlockedDateModal({
                                     styles.selectedDropdownOption,
                                 ]}
                                 onPress={() => {
-                                  console.log(
-                                    "🎨 Selected doctor:",
-                                    doctorLabel,
-                                    "ID:",
-                                    doctor.id
-                                  );
                                   setFormData((prev) => ({
                                     ...prev,
                                     doctor_id: doctor.id,
