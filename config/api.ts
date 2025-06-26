@@ -3,7 +3,8 @@
 // For local development, use your computer's IP address
 // For production, use your deployed backend URL
 
-export const API_BASE_URL = "http://localhost:8000"; // Local development
+export const API_BASE_URL = "http://192.168.1.153:8000"; // Local development - use computer's IP
+// export const API_BASE_URL = "http://localhost:8000"; // Use this for web browser testing
 // export const API_BASE_URL = 'http://your-production-url.com';
 
 export const API_ENDPOINTS = {

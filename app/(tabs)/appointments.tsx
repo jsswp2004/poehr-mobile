@@ -39,17 +39,25 @@ interface Appointment {
   doctor_id: number;
 }
 
-interface BlockedDate {
+interface BlockedDateDisplay {
   id: number;
   date: string;
   reason: string;
   doctor_id?: number;
 }
 
+interface Doctor {
+  id: number;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
 export default function AppointmentsScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [blockedDates, setBlockedDates] = useState<BlockedDate[]>([]);
+  const [blockedDates, setBlockedDates] = useState<BlockedDateDisplay[]>([]);
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
     moment().format("YYYY-MM-DD")
   );
@@ -61,7 +69,7 @@ export default function AppointmentsScreen() {
   >();
   const [blockedDateModalVisible, setBlockedDateModalVisible] = useState(false);
   const [editingBlockedDate, setEditingBlockedDate] = useState<
-    BlockedDate | undefined
+    BlockedDateDisplay | undefined
   >();
 
   useEffect(() => {
@@ -72,6 +80,7 @@ export default function AppointmentsScreen() {
     if (user) {
       loadAppointments();
       loadBlockedDates();
+      loadDoctors();
     }
   }, [user, selectedDate]);
 
@@ -118,6 +127,49 @@ export default function AppointmentsScreen() {
       console.error("Error loading appointments:", error);
     }
   };
+  const loadDoctors = async () => {
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        console.log("❌ No auth token found for loading doctors");
+        setDoctors([]);
+        return;
+      }
+
+      console.log(
+        "🔍 Loading doctors from:",
+        `${API_BASE_URL}/api/users/doctors/`
+      );
+
+      const response = await fetch(`${API_BASE_URL}/api/users/doctors/`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      console.log("🔍 Doctors response status:", response.status);
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log("🔍 Doctors loaded:", data?.length || 0, "items");
+        console.log(
+          "🔍 Doctor names:",
+          data?.map(
+            (d: Doctor) => `${d.first_name} ${d.last_name} (ID: ${d.id})`
+          )
+        );
+        setDoctors(data || []);
+      } else {
+        console.error("Failed to load doctors:", response.status);
+        setDoctors([]);
+      }
+    } catch (error) {
+      console.error("Error loading doctors:", error);
+      setDoctors([]);
+    }
+  };
+
   const loadBlockedDates = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -129,22 +181,40 @@ export default function AppointmentsScreen() {
 
       console.log(
         "🔍 Loading blocked dates from:",
-        `${API_BASE_URL}/api/blocked-dates/`
+        `${API_BASE_URL}/api/availability/?is_blocked=true`
       );
 
-      const response = await fetch(`${API_BASE_URL}/api/blocked-dates/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/availability/?is_blocked=true`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       console.log("🔍 Blocked dates response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
         console.log("🔍 Blocked dates loaded:", data?.length || 0, "items");
-        setBlockedDates(data);
+        console.log(
+          "🔍 Raw blocked dates data:",
+          JSON.stringify(data, null, 2)
+        );
+
+        // Convert availability data to BlockedDateDisplay format
+        const blockedDateDisplays: BlockedDateDisplay[] =
+          data?.map((item: any) => ({
+            id: item.id,
+            date: moment(item.start_time).format("YYYY-MM-DD"),
+            reason: item.block_type || "Blocked",
+            doctor_id: item.doctor,
+          })) || [];
+
+        console.log("🔍 Converted blocked dates:", blockedDateDisplays);
+        setBlockedDates(blockedDateDisplays);
       } else {
         console.error("Failed to load blocked dates:", response.status);
         // If backend is unavailable, provide demo data
@@ -194,6 +264,7 @@ export default function AppointmentsScreen() {
     setRefreshing(true);
     await loadAppointments();
     await loadBlockedDates();
+    await loadDoctors();
     setRefreshing(false);
   };
   const getMarkedDates = () => {
@@ -255,6 +326,25 @@ export default function AppointmentsScreen() {
         appointment.appointment_date &&
         moment(appointment.appointment_date).format("YYYY-MM-DD") === date
     );
+  };
+
+  const getDoctorNameById = (doctorId?: number): string => {
+    if (!doctorId) return "";
+    const doctor = doctors.find((d) => d.id === doctorId);
+    if (!doctor) return "";
+    return `Dr. ${doctor.first_name} ${doctor.last_name}`;
+  };
+
+  // Convert BlockedDateDisplay to the format expected by BlockedDateModal
+  const convertToModalFormat = (blockedDate: BlockedDateDisplay) => {
+    return {
+      id: blockedDate.id,
+      start_time: `${blockedDate.date}T00:00:00Z`,
+      end_time: `${blockedDate.date}T23:59:59Z`,
+      is_blocked: true,
+      block_type: blockedDate.reason,
+      doctor: blockedDate.doctor_id,
+    };
   };
 
   const getBlockedDatesForDate = (date: string) => {
@@ -333,12 +423,12 @@ export default function AppointmentsScreen() {
     setBlockedDateModalVisible(true);
   };
 
-  const handleEditBlockedDate = (blockedDate: BlockedDate) => {
+  const handleEditBlockedDate = (blockedDate: BlockedDateDisplay) => {
     setEditingBlockedDate(blockedDate);
     setBlockedDateModalVisible(true);
   };
 
-  const handleDeleteBlockedDate = async (blockedDate: BlockedDate) => {
+  const handleDeleteBlockedDate = async (blockedDate: BlockedDateDisplay) => {
     Alert.alert(
       "Remove Block",
       "Are you sure you want to remove this blocked date?",
@@ -409,40 +499,6 @@ export default function AppointmentsScreen() {
         </TouchableOpacity>
       </ThemedView>
 
-      {/* Info banner for when no patients are available */}
-      <ThemedView style={styles.infoBanner}>
-        <ThemedText style={styles.infoBannerTitle}>
-          🏥 Getting Started
-        </ThemedText>
-        <ThemedText style={styles.infoBannerText}>
-          To create appointments, you need patients and doctors in the system.
-        </ThemedText>
-        <ThemedText style={styles.infoBannerText}>
-          • Backend is running at {API_BASE_URL}
-        </ThemedText>
-        <ThemedText style={styles.infoBannerText}>
-          • Visit Django Admin to add test users: {API_BASE_URL}/admin/
-        </ThemedText>{" "}
-        <ThemedText style={styles.infoBannerText}>
-          • Create users with roles: &apos;patient&apos;, &apos;doctor&apos;,
-          &apos;admin&apos;
-        </ThemedText>
-        <TouchableOpacity
-          style={styles.adminButton}
-          onPress={() => {
-            Alert.alert(
-              "Django Admin",
-              `Open Django Admin at:\n${API_BASE_URL}/admin/\n\nCreate test users with different roles (patient, doctor, admin) to populate the appointment system.`,
-              [{ text: "OK", style: "default" }]
-            );
-          }}
-        >
-          <ThemedText style={styles.adminButtonText}>
-            📝 Django Admin Guide
-          </ThemedText>
-        </TouchableOpacity>
-      </ThemedView>
-
       <ThemedView style={styles.calendarContainer}>
         <Calendar
           onDayPress={onDayPress}
@@ -499,9 +555,16 @@ export default function AppointmentsScreen() {
             {dayBlockedDates.map((blocked) => (
               <ThemedView key={blocked.id} style={styles.blockedItem}>
                 <ThemedView style={styles.blockedItemHeader}>
-                  <ThemedText style={styles.blockedReason}>
-                    {blocked.reason}
-                  </ThemedText>
+                  <ThemedView style={styles.blockedInfo}>
+                    <ThemedText style={styles.blockedReason}>
+                      {blocked.reason}
+                    </ThemedText>
+                    {blocked.doctor_id && (
+                      <ThemedText style={styles.blockedDoctor}>
+                        {getDoctorNameById(blocked.doctor_id)}
+                      </ThemedText>
+                    )}
+                  </ThemedView>
                   {(user?.role === "doctor" || user?.role === "admin") && (
                     <ThemedView style={styles.blockedActions}>
                       <TouchableOpacity
@@ -644,7 +707,11 @@ export default function AppointmentsScreen() {
         visible={blockedDateModalVisible}
         onClose={() => setBlockedDateModalVisible(false)}
         onSave={handleBlockedDateSave}
-        blockedDate={editingBlockedDate}
+        blockedDate={
+          editingBlockedDate
+            ? convertToModalFormat(editingBlockedDate)
+            : undefined
+        }
         selectedDate={selectedDate}
         currentUser={user}
       />
@@ -675,38 +742,6 @@ const styles = StyleSheet.create({
   refreshButtonText: {
     color: "white",
     fontWeight: "bold",
-  },
-  infoBanner: {
-    marginBottom: 20,
-    padding: 15,
-    borderRadius: 10,
-    backgroundColor: "rgba(52, 152, 219, 0.1)",
-    borderLeftWidth: 4,
-    borderLeftColor: "#3498db",
-  },
-  infoBannerTitle: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
-    color: "#3498db",
-  },
-  infoBannerText: {
-    fontSize: 14,
-    marginBottom: 4,
-    opacity: 0.8,
-  },
-  adminButton: {
-    backgroundColor: "#3498db",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    marginTop: 10,
-    alignSelf: "flex-start",
-  },
-  adminButtonText: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 14,
   },
   calendarContainer: {
     marginBottom: 20,
@@ -753,6 +788,15 @@ const styles = StyleSheet.create({
   blockedReason: {
     flex: 1,
     fontSize: 14,
+  },
+  blockedInfo: {
+    flex: 1,
+  },
+  blockedDoctor: {
+    fontSize: 12,
+    opacity: 0.7,
+    fontStyle: "italic",
+    marginTop: 2,
   },
   blockedActions: {
     flexDirection: "row",

@@ -4,7 +4,7 @@ import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
-import { StyleSheet, TouchableOpacity } from "react-native";
+import { Alert, StyleSheet, TouchableOpacity } from "react-native";
 
 import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
@@ -86,6 +86,15 @@ export default function HomeScreen() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("📅 Today's appointments data:", data);
+        console.log("📅 First appointment sample:", data[0]);
+        if (data[0]) {
+          console.log("📅 appointment_time value:", data[0].appointment_time);
+          console.log(
+            "📅 appointment_time type:",
+            typeof data[0].appointment_time
+          );
+        }
         setTodayAppointments(data);
       } else {
         console.log("Failed to load appointments:", response.status);
@@ -98,31 +107,52 @@ export default function HomeScreen() {
   };
   const logout = async () => {
     console.log("🚪 Logout button pressed");
-    // Use browser confirm instead of Alert.alert for web compatibility
-    const confirmed = window.confirm("Are you sure you want to logout?");
-    if (confirmed) {
-      console.log("🚪 Logging out user...");
-      try {
-        await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
-        console.log("🚪 Tokens cleared, navigating to login...");
-        window.location.href = "/login";
-      } catch (error) {
-        console.error("🚪 Error during logout:", error);
-      }
-    }
+    // Use Alert.alert for mobile compatibility instead of window.confirm
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          console.log("🚪 Logging out user...");
+          try {
+            await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+            console.log("🚪 Tokens cleared, navigating to login...");
+            // Use router.replace instead of window.location.href for mobile compatibility
+            router.replace("/login");
+          } catch (error) {
+            console.error("🚪 Error during logout:", error);
+          }
+        },
+      },
+    ]);
   };
   const clearAuthForTesting = async () => {
-    const confirmed = window.confirm(
-      "This will log you out so you can test registration. Continue?"
+    Alert.alert(
+      "Clear Authentication",
+      "This will log you out so you can test registration. Continue?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Continue",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+              router.replace("/login");
+            } catch (error) {
+              console.error("🚪 Error during auth clear:", error);
+            }
+          },
+        },
+      ]
     );
-    if (confirmed) {
-      try {
-        await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
-        window.location.href = "/login";
-      } catch (error) {
-        console.error("🚪 Error during auth clear:", error);
-      }
-    }
   };
 
   if (loading) {
@@ -193,9 +223,14 @@ export default function HomeScreen() {
             {todayAppointments.slice(0, 3).map((appointment) => (
               <ThemedView key={appointment.id} style={styles.appointmentItem}>
                 <ThemedText style={styles.appointmentTime}>
-                  {moment(appointment.appointment_time, "HH:mm:ss").format(
-                    "h:mm A"
-                  )}
+                  {appointment.appointment_time
+                    ? moment(appointment.appointment_time, [
+                        "HH:mm:ss",
+                        "HH:mm",
+                        "YYYY-MM-DDTHH:mm:ss",
+                        "YYYY-MM-DD HH:mm:ss",
+                      ]).format("h:mm A")
+                    : "Time not set"}
                 </ThemedText>
                 <ThemedText>
                   {user?.role === "patient"

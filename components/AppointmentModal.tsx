@@ -213,7 +213,7 @@ export default function AppointmentModal({
           patients.length === 0 ? "• No patients available\n" : ""
         }${
           doctors.length === 0 ? "• No doctors available\n" : ""
-        }\nPlease add users in Django Admin first:\n${API_BASE_URL}/admin/\n\nCreate users with roles 'patient' and 'doctor' to enable appointments.`,
+        }\nPlease add users to enable appointments.`,
         [{ text: "OK" }]
       );
       return;
