@@ -35,6 +35,7 @@ interface Doctor {
 
 interface Patient {
   id: number;
+  user_id: number; // Add user_id field for the CustomUser reference
   username: string;
   first_name: string;
   last_name: string;
@@ -275,6 +276,7 @@ export default function AppointmentModal({
             const demoPatients = [
               {
                 id: 1,
+                user_id: 101, // Demo user_id
                 username: "demo_patient1",
                 first_name: "Alice",
                 last_name: "Johnson",
@@ -282,6 +284,7 @@ export default function AppointmentModal({
               },
               {
                 id: 2,
+                user_id: 102, // Demo user_id
                 username: "demo_patient2",
                 first_name: "Bob",
                 last_name: "Smith",
@@ -289,6 +292,7 @@ export default function AppointmentModal({
               },
               {
                 id: 3,
+                user_id: 103, // Demo user_id
                 username: "demo_patient3",
                 first_name: "Carol",
                 last_name: "Davis",
@@ -389,6 +393,7 @@ export default function AppointmentModal({
       const demoPatients = [
         {
           id: 1,
+          user_id: 101, // Demo user_id
           username: "demo_patient1",
           first_name: "Alice",
           last_name: "Johnson",
@@ -396,13 +401,15 @@ export default function AppointmentModal({
         },
         {
           id: 2,
+          user_id: 102, // Demo user_id
           username: "demo_patient2",
           first_name: "Bob",
-          lastName: "Smith",
+          last_name: "Smith", // Fixed inconsistent property name
           email: "bob@demo.com",
         },
         {
           id: 3,
+          user_id: 103, // Demo user_id
           username: "demo_patient3",
           first_name: "Carol",
           last_name: "Davis",
@@ -642,7 +649,7 @@ export default function AppointmentModal({
         title: finalClinicEvent.name || "Medical Appointment",
         appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00Z`, // Combine date and time with UTC timezone
         provider: formData.doctor_id, // Use doctor_id as provider
-        patient: formData.patient_id,
+        patient: finalPatient.user_id, // Use patient.user_id instead of patient.id
         duration: formData.duration,
         status: formData.status,
         clinic_event: formData.clinic_event_id,
@@ -657,7 +664,7 @@ export default function AppointmentModal({
       // ENHANCED DEBUG: Clear confirmation of what's being saved
       console.log("🎯 === APPOINTMENT SAVE CONFIRMATION ===");
       console.log(
-        `🎯 Patient being saved: ${finalPatient.first_name} ${finalPatient.last_name} (ID: ${formData.patient_id})`
+        `🎯 Patient being saved: ${finalPatient.first_name} ${finalPatient.last_name} (Patient ID: ${formData.patient_id}, User ID: ${finalPatient.user_id})`
       );
       console.log(
         `🎯 Doctor being saved: ${finalDoctor.first_name} ${finalDoctor.last_name} (ID: ${formData.doctor_id})`
