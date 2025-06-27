@@ -645,9 +645,19 @@ export default function AppointmentModal({
         return;
       }
 
+      // Get current timezone offset dynamically
+      const now = new Date();
+      const timezoneOffset = -now.getTimezoneOffset(); // getTimezoneOffset returns negative values for positive offsets
+      const offsetHours = Math.floor(Math.abs(timezoneOffset) / 60);
+      const offsetMinutes = Math.abs(timezoneOffset) % 60;
+      const offsetSign = timezoneOffset >= 0 ? "+" : "-";
+      const timezoneString = `${offsetSign}${offsetHours
+        .toString()
+        .padStart(2, "0")}:${offsetMinutes.toString().padStart(2, "0")}`;
+
       const appointmentData = {
         title: finalClinicEvent.name || "Medical Appointment",
-        appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00Z`, // Combine date and time with UTC timezone
+        appointment_datetime: `${formData.appointment_date}T${formData.appointment_time}:00${timezoneString}`, // Use dynamic timezone
         provider: formData.doctor_id, // Use doctor_id as provider
         patient: finalPatient.user_id, // Use patient.user_id instead of patient.id
         duration: formData.duration,
