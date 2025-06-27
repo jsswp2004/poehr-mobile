@@ -18,14 +18,16 @@ interface User {
   role: string;
   email?: string;
   user_id: number;
+  organization?: string; // Add organization field
 }
 
 interface Appointment {
   id: number;
   patient_name: string;
   doctor_name: string;
-  appointment_date: string;
-  appointment_time: string;
+  appointment_date?: string; // Keep for backward compatibility
+  appointment_time?: string; // Keep for backward compatibility
+  appointment_datetime?: string; // New field from backend
   duration: number;
   status: string;
 }
@@ -46,6 +48,25 @@ export default function HomeScreen() {
     }
   }, [user]);
 
+  // Function to get the appropriate logo image based on user organization
+  const getOrganizationLogo = () => {
+    if (!user?.organization) {
+      return require("@/assets/images/power-logo.png");
+    }
+
+    const org = user.organization.toLowerCase();
+
+    // Map organizations to their respective logos
+    if (org.includes("hospital") || org.includes("medical center")) {
+      return require("@/assets/images/icon.png");
+    } else if (org.includes("clinic") || org.includes("health")) {
+      return require("@/assets/images/adaptive-icon.png");
+    } else {
+      // Default to POWER IT logo
+      return require("@/assets/images/power-logo.png");
+    }
+  };
+
   const loadUserData = async () => {
     try {
       const token = await AsyncStorage.getItem("access_token");
@@ -58,6 +79,7 @@ export default function HomeScreen() {
           role: decodedToken.role,
           email: decodedToken.email,
           user_id: decodedToken.user_id,
+          organization: decodedToken.organization || "POWER IT", // Default to POWER IT
         });
       }
     } catch (error) {
@@ -91,8 +113,16 @@ export default function HomeScreen() {
         if (data[0]) {
           console.log("📅 appointment_time value:", data[0].appointment_time);
           console.log(
+            "📅 appointment_datetime value:",
+            data[0].appointment_datetime
+          );
+          console.log(
             "📅 appointment_time type:",
             typeof data[0].appointment_time
+          );
+          console.log(
+            "📅 appointment_datetime type:",
+            typeof data[0].appointment_datetime
           );
         }
         setTodayAppointments(data);
@@ -161,8 +191,8 @@ export default function HomeScreen() {
         headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
         headerImage={
           <Image
-            source={require("@/assets/images/partial-react-logo.png")}
-            style={styles.reactLogo}
+            source={require("@/assets/images/power-logo.png")}
+            style={styles.organizationLogo}
           />
         }
       >
@@ -177,10 +207,7 @@ export default function HomeScreen() {
     <ParallaxScrollView
       headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
       headerImage={
-        <Image
-          source={require("@/assets/images/partial-react-logo.png")}
-          style={styles.reactLogo}
-        />
+        <Image source={getOrganizationLogo()} style={styles.organizationLogo} />
       }
     >
       <ThemedView style={styles.header}>
@@ -197,6 +224,9 @@ export default function HomeScreen() {
           Welcome, {user?.firstName || user?.username}! 👋
         </ThemedText>
         <ThemedText>Role: {user?.role}</ThemedText>
+        <ThemedText>
+          Organization: {user?.organization || "POWER IT"}
+        </ThemedText>
         {/*<ThemedText>Email: {user?.email}</ThemedText>*/}
       </ThemedView>
 
@@ -220,28 +250,53 @@ export default function HomeScreen() {
             <ThemedText>
               You have {todayAppointments.length} appointment(s) today:
             </ThemedText>
-            {todayAppointments.slice(0, 3).map((appointment) => (
-              <ThemedView key={appointment.id} style={styles.appointmentItem}>
-                <ThemedText style={styles.appointmentTime}>
-                  {appointment.appointment_time
-                    ? moment(appointment.appointment_time, [
-                        "HH:mm:ss",
-                        "HH:mm",
-                        "YYYY-MM-DDTHH:mm:ss",
-                        "YYYY-MM-DD HH:mm:ss",
-                      ]).format("h:mm A")
-                    : "Time not set"}
-                </ThemedText>
-                <ThemedText>
-                  {user?.role === "patient"
-                    ? `Dr. ${appointment.doctor_name}`
-                    : appointment.patient_name}
-                </ThemedText>
-                <ThemedText style={styles.appointmentStatus}>
-                  {appointment.status.toUpperCase()}
-                </ThemedText>
-              </ThemedView>
-            ))}
+            {todayAppointments.slice(0, 3).map((appointment) => {
+              // Handle both old format (appointment_time) and new format (appointment_datetime)
+              let displayTime = "Time not set";
+
+              if (appointment.appointment_datetime) {
+                // New format: parse appointment_datetime
+                try {
+                  const datetime = moment(appointment.appointment_datetime);
+                  if (datetime.isValid()) {
+                    displayTime = datetime.format("h:mm A");
+                  }
+                } catch (error) {
+                  console.log("Error parsing appointment_datetime:", error);
+                }
+              } else if (appointment.appointment_time) {
+                // Old format: parse appointment_time
+                try {
+                  const time = moment(appointment.appointment_time, [
+                    "HH:mm:ss",
+                    "HH:mm",
+                    "YYYY-MM-DDTHH:mm:ss",
+                    "YYYY-MM-DD HH:mm:ss",
+                  ]);
+                  if (time.isValid()) {
+                    displayTime = time.format("h:mm A");
+                  }
+                } catch (error) {
+                  console.log("Error parsing appointment_time:", error);
+                }
+              }
+
+              return (
+                <ThemedView key={appointment.id} style={styles.appointmentItem}>
+                  <ThemedText style={styles.appointmentTime}>
+                    {displayTime}
+                  </ThemedText>
+                  <ThemedText>
+                    {user?.role === "patient"
+                      ? `Dr. ${appointment.doctor_name}`
+                      : appointment.patient_name}
+                  </ThemedText>
+                  <ThemedText style={styles.appointmentStatus}>
+                    {appointment.status.toUpperCase()}
+                  </ThemedText>
+                </ThemedView>
+              );
+            })}
             {todayAppointments.length > 3 && (
               <TouchableOpacity
                 style={styles.viewAllButton}
@@ -293,21 +348,6 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
           <ThemedText>🧪 Test Registration (Clear Auth)</ThemedText>
         </TouchableOpacity>
-      </ThemedView>
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">✅ Phase 2 Progress</ThemedText>
-        <ThemedText>Appointments Module features implemented:</ThemedText>
-        <ThemedText>• ✅ Calendar view with react-native-calendars</ThemedText>
-        <ThemedText>
-          • ✅ Appointment CRUD operations (Create, Edit, Delete)
-        </ThemedText>
-        <ThemedText>• ✅ Blocked dates management</ThemedText>
-        <ThemedText>• ✅ Role-based permissions</ThemedText>
-        <ThemedText>• ✅ Today&apos;s appointments overview</ThemedText>
-        <ThemedText>
-          • 🔄 API integration (connects when backend is running)
-        </ThemedText>
       </ThemedView>
     </ParallaxScrollView>
   );
@@ -383,11 +423,16 @@ const styles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  organizationLogo: {
+    width: "100%",
+    height: "80%",
     position: "absolute",
+    top: 0,
+    left: 0,
+    marginTop: 25,
+    marginBottom: 25, // Adjust based on your header height
+    resizeMode: "center",
+    borderRadius: 10, // Optional: add some border radius for aesthetics
+    
   },
 });
