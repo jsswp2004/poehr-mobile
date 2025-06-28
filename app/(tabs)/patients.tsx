@@ -43,7 +43,7 @@ interface Patient {
   medical_history?: string;
   created_at?: string;
   provider?: number;
-  provider_name?: string;
+  provider_name?: number;
   last_appointment_date?: string;
   organization?: number;
 }
@@ -60,6 +60,10 @@ export default function PatientsScreen() {
   const [genderFilter, setGenderFilter] = useState<string>("all");
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [showPatientModal, setShowPatientModal] = useState(false);
+  const [isEditingPatient, setIsEditingPatient] = useState(false);
+  const [editedPatient, setEditedPatient] = useState<Patient | null>(null);
+  const [savingPatient, setSavingPatient] = useState(false);
+  const [deletingPatient, setDeletingPatient] = useState(false);
 
   // Debug: Log component mount
   useEffect(() => {
@@ -255,13 +259,176 @@ export default function PatientsScreen() {
     console.log("CSV Content:", csvContent);
   };
 
-  if (loading) {
-    return (
-      <ThemedView style={styles.container}>
-        <ThemedText type="title">Loading...</ThemedText>
-      </ThemedView>
+  const savePatient = async () => {
+    if (!editedPatient) return;
+
+    setSavingPatient(true);
+    try {
+      const token = await AsyncStorage.getItem("access_token");
+      if (!token) {
+        Alert.alert("Error", "No access token found. Please log in again.");
+        return;
+      }
+
+      console.log("🔄 Saving patient data:", editedPatient);
+
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/patients/${editedPatient.id}/`,
+        {
+          method: "PATCH", // Use PATCH for partial updates
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            first_name: editedPatient.first_name,
+            last_name: editedPatient.last_name,
+            email: editedPatient.email,
+            phone_number: editedPatient.phone_number,
+            date_of_birth: editedPatient.date_of_birth,
+            gender: editedPatient.gender,
+            address: editedPatient.address,
+            emergency_contact_name: editedPatient.emergency_contact_name,
+            emergency_contact_phone: editedPatient.emergency_contact_phone,
+            medical_history: editedPatient.medical_history,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        const updatedPatient = await response.json();
+        console.log("✅ Patient updated successfully:", updatedPatient);
+
+        // Update the patient in the local state
+        setPatients((prevPatients) =>
+          prevPatients.map((p) =>
+            p.id === editedPatient.id ? { ...p, ...updatedPatient } : p
+          )
+        );
+
+        // Update the selected patient for the modal
+        setSelectedPatient({ ...selectedPatient, ...updatedPatient });
+
+        // Reset editing state
+        setIsEditingPatient(false);
+        setEditedPatient(null);
+
+        Alert.alert("Success", "Patient information updated successfully!");
+      } else {
+        const errorText = await response.text();
+        console.log("❌ Failed to update patient:", errorText);
+        Alert.alert(
+          "Error",
+          "Failed to update patient information. Please try again."
+        );
+      }
+    } catch (error) {
+      console.log("💥 Error updating patient:", error);
+      Alert.alert(
+        "Error",
+        "Network error. Please check your connection and try again."
+      );
+    } finally {
+      setSavingPatient(false);
+    }
+  };
+
+  const deletePatient = async () => {
+    if (!selectedPatient) return;
+
+    Alert.alert(
+      "Delete Patient",
+      `Are you sure you want to delete ${selectedPatient.first_name} ${selectedPatient.last_name}? This action cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            setDeletingPatient(true);
+            try {
+              const token = await AsyncStorage.getItem("access_token");
+              if (!token) {
+                Alert.alert(
+                  "Error",
+                  "No access token found. Please log in again."
+                );
+                return;
+              }
+
+              const response = await fetch(
+                `${API_BASE_URL}/api/users/patients/${selectedPatient.id}/`,
+                {
+                  method: "DELETE",
+                  headers: {
+                    Authorization: `Bearer ${token}`,
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              if (response.ok || response.status === 204) {
+                console.log("✅ Patient deleted successfully");
+
+                // Remove patient from the list
+                setPatients((prevPatients) =>
+                  prevPatients.filter((p) => p.id !== selectedPatient.id)
+                );
+
+                // Close modal
+                setShowPatientModal(false);
+                setSelectedPatient(null);
+                setIsEditingPatient(false);
+                setEditedPatient(null);
+
+                Alert.alert("Success", "Patient deleted successfully!");
+              } else {
+                const errorText = await response.text();
+                console.log("❌ Failed to delete patient:", errorText);
+                Alert.alert(
+                  "Error",
+                  "Failed to delete patient. Please try again."
+                );
+              }
+            } catch (error) {
+              console.log("💥 Error deleting patient:", error);
+              Alert.alert(
+                "Error",
+                "Network error. Please check your connection and try again."
+              );
+            } finally {
+              setDeletingPatient(false);
+            }
+          },
+        },
+      ]
     );
-  }
+  };
+
+  const startEditingPatient = () => {
+    if (selectedPatient) {
+      setEditedPatient({ ...selectedPatient });
+      setIsEditingPatient(true);
+    }
+  };
+
+  const cancelEditingPatient = () => {
+    setIsEditingPatient(false);
+    setEditedPatient(null);
+  };
+
+  const updateEditedPatientField = (field: keyof Patient, value: string) => {
+    if (editedPatient) {
+      setEditedPatient((prev) => (prev ? { ...prev, [field]: value } : null));
+    }
+  };
+
+  const closeModal = () => {
+    setShowPatientModal(false);
+    setSelectedPatient(null);
+    setIsEditingPatient(false);
+    setEditedPatient(null);
+  };
 
   // Only show to doctors, admins, and system_admins
   if (
@@ -283,6 +450,14 @@ export default function PatientsScreen() {
             <ThemedText style={styles.backButtonText}>Go to Home</ThemedText>
           </TouchableOpacity>
         </ThemedView>
+      </ThemedView>
+    );
+  }
+
+  if (loading) {
+    return (
+      <ThemedView style={styles.container}>
+        <ThemedText type="title">Loading...</ThemedText>
       </ThemedView>
     );
   }
@@ -376,6 +551,8 @@ export default function PatientsScreen() {
                 onPress={() => {
                   setSelectedPatient(patient);
                   setShowPatientModal(true);
+                  setIsEditingPatient(false);
+                  setEditedPatient(null);
                 }}
               >
                 <ThemedView style={styles.patientInfo}>
@@ -441,111 +618,300 @@ export default function PatientsScreen() {
         visible={showPatientModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowPatientModal(false)}
+        onRequestClose={closeModal}
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <ThemedText type="title">Patient Details</ThemedText>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowPatientModal(false)}
-            >
-              <ThemedText style={styles.closeButtonText}>✕</ThemedText>
-            </TouchableOpacity>
+            <ThemedText type="title">
+              {isEditingPatient ? "Edit Patient" : "Patient Details"}
+            </ThemedText>
+            <View style={styles.modalHeaderButtons}>
+              {!isEditingPatient ? (
+                <>
+                  {(user?.role === "admin" ||
+                    user?.role === "system_admin") && (
+                    <>
+                      <TouchableOpacity
+                        style={styles.editButton}
+                        onPress={startEditingPatient}
+                        disabled={deletingPatient}
+                      >
+                        <ThemedText style={styles.editButtonText}>
+                          ✏️ Edit
+                        </ThemedText>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.deleteButton}
+                        onPress={deletePatient}
+                        disabled={deletingPatient}
+                      >
+                        <ThemedText style={styles.deleteButtonText}>
+                          {deletingPatient ? "Deleting..." : "🗑️ Delete"}
+                        </ThemedText>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                  <TouchableOpacity
+                    style={styles.closeButton}
+                    onPress={closeModal}
+                  >
+                    <ThemedText style={styles.closeButtonText}>✕</ThemedText>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <>
+                  <TouchableOpacity
+                    style={styles.saveButton}
+                    onPress={savePatient}
+                    disabled={savingPatient}
+                  >
+                    <ThemedText style={styles.saveButtonText}>
+                      {savingPatient ? "💾 Saving..." : "💾 Save"}
+                    </ThemedText>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={cancelEditingPatient}
+                    disabled={savingPatient}
+                  >
+                    <ThemedText style={styles.cancelButtonText}>
+                      ❌ Cancel
+                    </ThemedText>
+                  </TouchableOpacity>
+                </>
+              )}
+            </View>
           </View>
 
           {selectedPatient && (
             <ScrollView style={styles.modalContent}>
               <ThemedView style={styles.detailSection}>
                 <ThemedText type="subtitle">Personal Information</ThemedText>
+
+                {/* First Name */}
                 <ThemedView style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Name:</ThemedText>
-                  <ThemedText style={styles.detailValue}>
-                    {selectedPatient.first_name} {selectedPatient.last_name}
+                  <ThemedText style={styles.detailLabel}>
+                    First Name:
                   </ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.first_name || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("first_name", value)
+                      }
+                      placeholder="First Name"
+                    />
+                  ) : (
+                    <ThemedText style={styles.detailValue}>
+                      {selectedPatient.first_name}
+                    </ThemedText>
+                  )}
                 </ThemedView>
+
+                {/* Last Name */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Last Name:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.last_name || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("last_name", value)
+                      }
+                      placeholder="Last Name"
+                    />
+                  ) : (
+                    <ThemedText style={styles.detailValue}>
+                      {selectedPatient.last_name}
+                    </ThemedText>
+                  )}
+                </ThemedView>
+
+                {/* Email */}
                 <ThemedView style={styles.detailRow}>
                   <ThemedText style={styles.detailLabel}>Email:</ThemedText>
-                  <ThemedText style={styles.detailValue}>
-                    {selectedPatient.email}
-                  </ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.email || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("email", value)
+                      }
+                      placeholder="Email"
+                      keyboardType="email-address"
+                    />
+                  ) : (
+                    <ThemedText style={styles.detailValue}>
+                      {selectedPatient.email}
+                    </ThemedText>
+                  )}
                 </ThemedView>
-                {selectedPatient.phone_number && (
-                  <ThemedView style={styles.detailRow}>
-                    <ThemedText style={styles.detailLabel}>Phone:</ThemedText>
+
+                {/* Phone */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Phone:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.phone_number || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("phone_number", value)
+                      }
+                      placeholder="Phone Number"
+                      keyboardType="phone-pad"
+                    />
+                  ) : (
                     <ThemedText style={styles.detailValue}>
-                      {selectedPatient.phone_number}
+                      {selectedPatient.phone_number || "Not provided"}
                     </ThemedText>
-                  </ThemedView>
-                )}
-                {selectedPatient.date_of_birth && (
-                  <ThemedView style={styles.detailRow}>
-                    <ThemedText style={styles.detailLabel}>
-                      Date of Birth:
-                    </ThemedText>
+                  )}
+                </ThemedView>
+
+                {/* Date of Birth */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>
+                    Date of Birth:
+                  </ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.date_of_birth || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("date_of_birth", value)
+                      }
+                      placeholder="YYYY-MM-DD"
+                    />
+                  ) : (
                     <ThemedText style={styles.detailValue}>
-                      {moment(selectedPatient.date_of_birth).format(
-                        "MMMM D, YYYY"
-                      )}{" "}
-                      (Age:{" "}
-                      {moment().diff(
-                        moment(selectedPatient.date_of_birth),
-                        "years"
-                      )}
-                      )
+                      {selectedPatient.date_of_birth
+                        ? `${moment(selectedPatient.date_of_birth).format(
+                            "MMMM D, YYYY"
+                          )} (Age: ${moment().diff(
+                            moment(selectedPatient.date_of_birth),
+                            "years"
+                          )})`
+                        : "Not provided"}
                     </ThemedText>
-                  </ThemedView>
-                )}
-                {selectedPatient.gender && (
-                  <ThemedView style={styles.detailRow}>
-                    <ThemedText style={styles.detailLabel}>Gender:</ThemedText>
+                  )}
+                </ThemedView>
+
+                {/* Gender */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Gender:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.gender || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("gender", value)
+                      }
+                      placeholder="Gender"
+                    />
+                  ) : (
                     <ThemedText style={styles.detailValue}>
-                      {selectedPatient.gender.charAt(0).toUpperCase() +
-                        selectedPatient.gender.slice(1)}
+                      {selectedPatient.gender
+                        ? selectedPatient.gender.charAt(0).toUpperCase() +
+                          selectedPatient.gender.slice(1)
+                        : "Not provided"}
                     </ThemedText>
-                  </ThemedView>
-                )}
-                {selectedPatient.address && (
-                  <ThemedView style={styles.detailRow}>
-                    <ThemedText style={styles.detailLabel}>Address:</ThemedText>
+                  )}
+                </ThemedView>
+
+                {/* Address */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Address:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editTextArea}
+                      value={editedPatient?.address || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("address", value)
+                      }
+                      placeholder="Address"
+                      multiline={true}
+                      numberOfLines={3}
+                    />
+                  ) : (
                     <ThemedText style={styles.detailValue}>
-                      {selectedPatient.address}
+                      {selectedPatient.address || "Not provided"}
                     </ThemedText>
-                  </ThemedView>
-                )}
+                  )}
+                </ThemedView>
               </ThemedView>
 
-              {(selectedPatient.emergency_contact_name ||
-                selectedPatient.emergency_contact_phone) && (
-                <ThemedView style={styles.detailSection}>
-                  <ThemedText type="subtitle">Emergency Contact</ThemedText>
-                  {selectedPatient.emergency_contact_name && (
-                    <ThemedView style={styles.detailRow}>
-                      <ThemedText style={styles.detailLabel}>Name:</ThemedText>
-                      <ThemedText style={styles.detailValue}>
-                        {selectedPatient.emergency_contact_name}
-                      </ThemedText>
-                    </ThemedView>
-                  )}
-                  {selectedPatient.emergency_contact_phone && (
-                    <ThemedView style={styles.detailRow}>
-                      <ThemedText style={styles.detailLabel}>Phone:</ThemedText>
-                      <ThemedText style={styles.detailValue}>
-                        {selectedPatient.emergency_contact_phone}
-                      </ThemedText>
-                    </ThemedView>
-                  )}
-                </ThemedView>
-              )}
+              {/* Emergency Contact Section */}
+              <ThemedView style={styles.detailSection}>
+                <ThemedText type="subtitle">Emergency Contact</ThemedText>
 
-              {selectedPatient.medical_history && (
-                <ThemedView style={styles.detailSection}>
-                  <ThemedText type="subtitle">Medical History</ThemedText>
-                  <ThemedText style={styles.medicalHistory}>
-                    {selectedPatient.medical_history}
-                  </ThemedText>
+                {/* Emergency Contact Name */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Name:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.emergency_contact_name || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField(
+                          "emergency_contact_name",
+                          value
+                        )
+                      }
+                      placeholder="Emergency Contact Name"
+                    />
+                  ) : (
+                    <ThemedText style={styles.detailValue}>
+                      {selectedPatient.emergency_contact_name || "Not provided"}
+                    </ThemedText>
+                  )}
                 </ThemedView>
-              )}
+
+                {/* Emergency Contact Phone */}
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Phone:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.emergency_contact_phone || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField(
+                          "emergency_contact_phone",
+                          value
+                        )
+                      }
+                      placeholder="Emergency Contact Phone"
+                      keyboardType="phone-pad"
+                    />
+                  ) : (
+                    <ThemedText style={styles.detailValue}>
+                      {selectedPatient.emergency_contact_phone ||
+                        "Not provided"}
+                    </ThemedText>
+                  )}
+                </ThemedView>
+              </ThemedView>
+
+              {/* Medical History Section */}
+              <ThemedView style={styles.detailSection}>
+                <ThemedText type="subtitle">Medical History</ThemedText>
+                {isEditingPatient ? (
+                  <TextInput
+                    style={styles.editTextArea}
+                    value={editedPatient?.medical_history || ""}
+                    onChangeText={(value) =>
+                      updateEditedPatientField("medical_history", value)
+                    }
+                    placeholder="Medical History and Notes"
+                    multiline={true}
+                    numberOfLines={6}
+                  />
+                ) : (
+                  <ThemedText style={styles.medicalHistory}>
+                    {selectedPatient.medical_history ||
+                      "No medical history recorded"}
+                  </ThemedText>
+                )}
+              </ThemedView>
 
               <ThemedView style={styles.detailSection}>
                 <ThemedText type="subtitle">Account Information</ThemedText>
@@ -838,5 +1204,76 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     borderWidth: 1,
     borderColor: "#dee2e6",
+  },
+  // Edit modal styles
+  modalHeaderButtons: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  editButton: {
+    backgroundColor: "#3498db",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  editButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  deleteButton: {
+    backgroundColor: "#e74c3c",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  deleteButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  saveButton: {
+    backgroundColor: "#27ae60",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  saveButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  cancelButton: {
+    backgroundColor: "#95a5a6",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+  },
+  cancelButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  editInput: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 4,
+    padding: 8,
+    fontSize: 14,
+    color: "#333",
+    minHeight: 40,
+  },
+  editTextArea: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 4,
+    padding: 8,
+    fontSize: 14,
+    color: "#333",
+    minHeight: 80,
+    textAlignVertical: "top",
   },
 });
