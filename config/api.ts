@@ -11,7 +11,7 @@ export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/api/auth/login/`,
   REGISTER: `${API_BASE_URL}/api/auth/register/`,
   APPOINTMENTS: `${API_BASE_URL}/api/appointments/`,
-  PATIENTS: `${API_BASE_URL}/api/patients/`,
+  PATIENTS: `${API_BASE_URL}/api/users/patients/`, // Updated to correct endpoint
   BLOCKED_DATES: `${API_BASE_URL}/api/blocked-dates/`,
 };
 

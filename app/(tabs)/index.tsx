@@ -135,6 +135,7 @@ export default function HomeScreen() {
       setLoadingAppointments(false);
     }
   };
+
   const logout = async () => {
     console.log("🚪 Logout button pressed");
     // Use Alert.alert for mobile compatibility instead of window.confirm
@@ -330,11 +331,14 @@ export default function HomeScreen() {
 
         {(user?.role === "doctor" || user?.role === "admin") && (
           <>
-            <TouchableOpacity style={styles.menuItem}>
-              <ThemedText>� Patients (Coming Soon)</ThemedText>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push("/(tabs)/patients")}
+            >
+              <ThemedText>👥 Patients</ThemedText>
             </TouchableOpacity>
             <TouchableOpacity style={styles.menuItem}>
-              <ThemedText>� Reports (Coming Soon)</ThemedText>
+              <ThemedText>📊 Reports (Coming Soon)</ThemedText>
             </TouchableOpacity>
           </>
         )}
@@ -347,6 +351,14 @@ export default function HomeScreen() {
 
         <TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
           <ThemedText>🧪 Test Registration (Clear Auth)</ThemedText>
+        </TouchableOpacity>
+
+        {/* Temporary debugger link */}
+        <TouchableOpacity
+          style={styles.menuItem}
+          onPress={() => router.push("/test")}
+        >
+          <ThemedText>🔧 Debug Patients API</ThemedText>
         </TouchableOpacity>
       </ThemedView>
     </ParallaxScrollView>
@@ -433,6 +445,151 @@ const styles = StyleSheet.create({
     marginBottom: 25, // Adjust based on your header height
     resizeMode: "center",
     borderRadius: 10, // Optional: add some border radius for aesthetics
-    
+  },
+  // Patient List Styles
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
+  },
+  exportButton: {
+    backgroundColor: "#2ecc71",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  exportButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  searchContainer: {
+    marginBottom: 15,
+  },
+  searchInput: {
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+    fontSize: 16,
+    color: "#333",
+  },
+  filterContainer: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  filterButton: {
+    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderRadius: 20,
+  },
+  filterButtonActive: {
+    backgroundColor: "#3498db",
+  },
+  filterButtonText: {
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  patientList: {
+    maxHeight: 300,
+  },
+  patientItem: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 15,
+    marginVertical: 4,
+    borderRadius: 8,
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    borderLeftWidth: 3,
+    borderLeftColor: "#3498db",
+  },
+  patientInfo: {
+    flex: 1,
+  },
+  patientName: {
+    fontSize: 16,
+    fontWeight: "bold",
+    marginBottom: 2,
+  },
+  patientEmail: {
+    fontSize: 14,
+    opacity: 0.8,
+    marginBottom: 2,
+  },
+  patientPhone: {
+    fontSize: 12,
+    opacity: 0.7,
+  },
+  patientMeta: {
+    alignItems: "flex-end",
+  },
+  patientGender: {
+    fontSize: 12,
+    fontWeight: "bold",
+    color: "#9b59b6",
+    marginBottom: 2,
+  },
+  patientId: {
+    fontSize: 10,
+    opacity: 0.6,
+  },
+  morePatients: {
+    textAlign: "center",
+    fontStyle: "italic",
+    opacity: 0.7,
+    marginTop: 10,
+  },
+  // Modal Styles
+  modalContainer: {
+    flex: 1,
+    backgroundColor: "#fff",
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+  },
+  closeButton: {
+    padding: 10,
+  },
+  closeButtonText: {
+    fontSize: 18,
+    fontWeight: "bold",
+    color: "#666",
+  },
+  modalContent: {
+    flex: 1,
+    padding: 20,
+  },
+  detailSection: {
+    marginBottom: 25,
+  },
+  detailRow: {
+    flexDirection: "row",
+    marginBottom: 8,
+    alignItems: "flex-start",
+  },
+  detailLabel: {
+    fontWeight: "bold",
+    width: 120,
+    color: "#666",
+  },
+  detailValue: {
+    flex: 1,
+    color: "#333",
+  },
+  medicalHistory: {
+    backgroundColor: "#f5f5f5",
+    padding: 15,
+    borderRadius: 8,
+    marginTop: 8,
+    color: "#333",
+    lineHeight: 20,
   },
 });
