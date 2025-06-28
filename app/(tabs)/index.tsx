@@ -352,14 +352,6 @@ export default function HomeScreen() {
         <TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
           <ThemedText>🧪 Test Registration (Clear Auth)</ThemedText>
         </TouchableOpacity>
-
-        {/* Temporary debugger link */}
-        <TouchableOpacity
-          style={styles.menuItem}
-          onPress={() => router.push("/test")}
-        >
-          <ThemedText>🔧 Debug Patients API</ThemedText>
-        </TouchableOpacity>
       </ThemedView>
     </ParallaxScrollView>
   );
