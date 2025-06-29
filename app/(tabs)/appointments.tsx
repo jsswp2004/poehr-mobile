@@ -518,7 +518,7 @@ export default function AppointmentsScreen() {
               if (!token) return;
 
               const response = await fetch(
-                `${API_BASE_URL}/api/blocked-dates/${blockedDate.id}/`,
+                `${API_BASE_URL}/api/availability/${blockedDate.id}/`,
                 {
                   method: "DELETE",
                   headers: {

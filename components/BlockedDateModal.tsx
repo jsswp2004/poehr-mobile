@@ -190,7 +190,7 @@ export default function BlockedDateModal({
         ? `${API_BASE_URL}/api/availability/${blockedDate.id}/`
         : `${API_BASE_URL}/api/availability/`;
 
-      const method = blockedDate ? "PUT" : "POST";
+      const method = blockedDate ? "PATCH" : "POST";
 
       // Get the user's current timezone offset
       const now = new Date();
@@ -202,14 +202,21 @@ export default function BlockedDateModal({
         .toString()
         .padStart(2, "0")}:${offsetMinutes.toString().padStart(2, "0")}`;
 
-      const availabilityData = {
-        doctor: formData.doctor_id,
-        start_time: `${formData.date}T00:00:00${offsetString}`,
-        end_time: `${formData.date}T23:59:59${offsetString}`,
-        is_blocked: true,
-        block_type: formData.reason || "Other",
-        recurrence: "none",
-      };
+      const availabilityData = blockedDate
+          ? {
+              // For PATCH requests, only send the fields that can be updated
+              block_type: formData.reason || "Other",
+              is_blocked: true,
+            }
+          : {
+              // For POST requests, send all required fields
+              doctor: formData.doctor_id,
+              start_time: `${formData.date}T00:00:00${offsetString}`,
+              end_time: `${formData.date}T23:59:59${offsetString}`,
+              is_blocked: true,
+              block_type: formData.reason || "Other",
+              recurrence: "none",
+            };
 
       const response = await fetch(url, {
         method,
