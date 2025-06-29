@@ -329,7 +329,9 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        {(user?.role === "doctor" || user?.role === "admin") && (
+        {(user?.role === "doctor" ||
+          user?.role === "admin" ||
+          user?.role === "system_admin") && (
           <>
             <TouchableOpacity
               style={styles.menuItem}
@@ -337,8 +339,11 @@ export default function HomeScreen() {
             >
               <ThemedText>👥 Patients</ThemedText>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.menuItem}>
-              <ThemedText>📊 Reports (Coming Soon)</ThemedText>
+            <TouchableOpacity
+              style={styles.menuItem}
+              onPress={() => router.push("/register-patient")}
+            >
+              <ThemedText>➕ Register New Patient</ThemedText>
             </TouchableOpacity>
           </>
         )}
@@ -349,9 +354,12 @@ export default function HomeScreen() {
           </TouchableOpacity>
         )}
 
-        <TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
+        {/*<TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
           <ThemedText>🧪 Test Registration (Clear Auth)</ThemedText>
         </TouchableOpacity>
+                    <TouchableOpacity style={styles.menuItem}>
+              <ThemedText>📊 Reports (Coming Soon)</ThemedText>
+            </TouchableOpacity>*/}
       </ThemedView>
     </ParallaxScrollView>
   );

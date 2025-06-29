@@ -37,6 +37,15 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
+        name="register-patient"
+        options={{
+          title: "Register",
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="person.badge.plus" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="patients"
         options={{
           title: "Patients",
