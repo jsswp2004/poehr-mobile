@@ -566,7 +566,11 @@ export default function AppointmentsScreen() {
       showsVerticalScrollIndicator={false}
     >
       <ThemedView style={styles.header}>
-        <ThemedText type="title">📅 Appointments</ThemedText>
+        <ThemedView style={styles.headerTitleWrapper}>
+          <ThemedText type="title" style={styles.headerTitle}>
+            Appointments 📅
+          </ThemedText>
+        </ThemedView>
         <TouchableOpacity style={styles.refreshButton} onPress={refreshData}>
           <ThemedText style={styles.refreshButtonText}>
             {refreshing ? "Refreshing..." : "Refresh"}
@@ -626,7 +630,9 @@ export default function AppointmentsScreen() {
 
         {dayBlockedDates.length > 0 && (
           <ThemedView style={styles.blockedSection}>
-            <ThemedText style={styles.sectionTitle}>🚫 Blocked</ThemedText>
+            <ThemedView style={styles.sectionTitleWrapper}>
+              <ThemedText style={styles.sectionTitle}>🚫 Blocked</ThemedText>
+            </ThemedView>
             {dayBlockedDates.map((blocked) => (
               <ThemedView key={blocked.id} style={styles.blockedItem}>
                 <ThemedView style={styles.blockedItemHeader}>
@@ -668,9 +674,11 @@ export default function AppointmentsScreen() {
 
         {dayAppointments.length > 0 ? (
           <ThemedView style={styles.appointmentsSection}>
-            <ThemedText style={styles.sectionTitle}>
-              📅 Appointments ({dayAppointments.length})
-            </ThemedText>
+            <ThemedView style={styles.sectionTitleWrapper}>
+              <ThemedText style={styles.sectionTitle}>
+                Appointments📅({dayAppointments.length})
+              </ThemedText>
+            </ThemedView>
             {dayAppointments.map((appointment) => {
               console.log(
                 "🔍 Rendering appointment:",
@@ -750,7 +758,7 @@ export default function AppointmentsScreen() {
                         <ThemedText style={styles.deleteButtonText}>
                           Delete
                         </ThemedText>
-                      </TouchableOpacity>{" "}
+                      </TouchableOpacity>
                     </ThemedView>
                   )}
                 </ThemedView>
@@ -862,6 +870,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 20,
   },
+  headerTitleWrapper: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink and wrap
+  },
+  headerTitle: {
+    flex: 1,
+    flexShrink: 1,
+    flexWrap: "wrap",
+  },
   refreshButton: {
     backgroundColor: "#3498db",
     paddingHorizontal: 15,
@@ -959,6 +976,12 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontWeight: "bold",
     marginBottom: 10,
+    flexShrink: 1,
+    flexWrap: "wrap",
+  },
+  sectionTitleWrapper: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink and wrap
   },
   appointmentItem: {
     padding: 15,

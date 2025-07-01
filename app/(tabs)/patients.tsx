@@ -21,7 +21,7 @@ interface User {
   username: string;
   firstName?: string;
   lastName?: string;
-  role: string;
+  role: "doctor" | "admin" | "system_admin" | "patient";
   email?: string;
   user_id: number;
   organization?: string;
@@ -102,7 +102,11 @@ export default function PatientsScreen() {
           username: decodedToken.username,
           firstName: decodedToken.first_name,
           lastName: decodedToken.last_name,
-          role: decodedToken.role,
+          role: decodedToken.role as
+            | "doctor"
+            | "admin"
+            | "system_admin"
+            | "patient",
           email: decodedToken.email,
           user_id: decodedToken.user_id,
           organization: decodedToken.organization || "POWER IT",
@@ -218,8 +222,9 @@ export default function PatientsScreen() {
   }, [filterPatients]);
 
   const exportToCSV = () => {
-    if (user?.role !== "admin") {
-      Alert.alert("Access Denied", "Only admins can export patient data.");
+    // Allow all users except patients to export CSV
+    if (user?.role === "patient") {
+      Alert.alert("Access Denied", "Patients cannot export patient data.");
       return;
     }
 
@@ -470,14 +475,23 @@ export default function PatientsScreen() {
       >
         {/* Header */}
         <ThemedView style={styles.header}>
-          <ThemedText type="title">👥 Patient Management</ThemedText>
-          {user?.role === "admin" && (
-            <TouchableOpacity style={styles.exportButton} onPress={exportToCSV}>
-              <ThemedText style={styles.exportButtonText}>
-                Export CSV
+          <ThemedView style={styles.headerTitleContainer}>
+            <ThemedView style={styles.headerTitleWrapper}>
+              <ThemedText type="title" style={styles.headerTitle}>
+                Patient Management 👥
               </ThemedText>
-            </TouchableOpacity>
-          )}
+            </ThemedView>
+            {(user?.role as string) !== "patient" && (
+              <TouchableOpacity
+                style={styles.exportButton}
+                onPress={exportToCSV}
+              >
+                <ThemedText style={styles.exportButtonText}>
+                  Export CSV
+                </ThemedText>
+              </TouchableOpacity>
+            )}
+          </ThemedView>
         </ThemedView>
 
         {/* Search and Filter Controls */}
@@ -622,9 +636,11 @@ export default function PatientsScreen() {
       >
         <View style={styles.modalContainer}>
           <View style={styles.modalHeader}>
-            <ThemedText type="title">
-              {isEditingPatient ? "Edit Patient" : "Patient Details"}
-            </ThemedText>
+            <View style={styles.modalTitleContainer}>
+              <ThemedText type="title" style={styles.modalTitle}>
+                {isEditingPatient ? "Edit Patient" : "Patient Details"}
+              </ThemedText>
+            </View>
             <View style={styles.modalHeaderButtons}>
               {!isEditingPatient ? (
                 <>
@@ -959,9 +975,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
     padding: 20,
     backgroundColor: "#fff",
     shadowColor: "#000",
@@ -969,17 +982,36 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    minHeight: 70,
+  },
+  headerTitleContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 15,
+  },
+  headerTitleWrapper: {
+    flex: 1,
+    minWidth: 0, // Allow text to shrink and wrap
+  },
+  headerTitle: {
+    flex: 1,
+    flexShrink: 1,
+    flexWrap: "wrap",
   },
   exportButton: {
     backgroundColor: "#2ecc71",
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minWidth: 80,
+    alignItems: "center",
   },
   exportButtonText: {
     color: "white",
     fontSize: 12,
     fontWeight: "bold",
+    textAlign: "center",
   },
   searchContainer: {
     padding: 20,
@@ -1162,6 +1194,17 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
     backgroundColor: "#f8f9fa",
+    minHeight: 70,
+  },
+  modalTitleContainer: {
+    flex: 1,
+    paddingRight: 15,
+    justifyContent: "center",
+  },
+  modalTitle: {
+    flexShrink: 1,
+    fontSize: 18,
+    lineHeight: 24,
   },
   closeButton: {
     padding: 10,

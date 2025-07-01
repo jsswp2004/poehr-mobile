@@ -288,8 +288,8 @@ export default function PatientAPIDebugger() {
       <View style={styles.info}>
         <Text style={styles.infoTitle}>Usage Instructions:</Text>
         <Text style={styles.infoText}>
-          1. Make sure you're logged in to the app{"\n"}
-          2. Tap "Run API Tests" to debug the patients API{"\n"}
+          1. Make sure you&apos;re logged in to the app{"\n"}
+          2. Tap &quot;Run API Tests&quot; to debug the patients API{"\n"}
           3. Check the results to identify issues{"\n"}
           4. Tap any result with data to view details
         </Text>

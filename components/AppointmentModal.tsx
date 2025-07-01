@@ -515,12 +515,16 @@ export default function AppointmentModal({
     if (patients.length === 0 || doctors.length === 0) {
       console.log("❌ Missing patients or doctors data");
       Alert.alert(
-        "Demo Mode",
-        `Missing data to create appointments:\n\n${
-          patients.length === 0 ? "• No patients available\n" : ""
+        "Database Status",
+        `Current database status:\n\n${
+          patients.length === 0
+            ? "• No patients found in the database\n"
+            : "• Patients are available in the database\n"
         }${
-          doctors.length === 0 ? "• No doctors available\n" : ""
-        }\nPlease add users to enable appointments.`,
+          doctors.length === 0
+            ? "• No doctors found in the database\n"
+            : "• Doctors are available in the database\n"
+        }\nPlease add users to the database to create appointments.`,
         [{ text: "OK" }]
       );
       return;
@@ -1135,7 +1139,8 @@ export default function AppointmentModal({
                   ) : (
                     <ThemedView style={styles.pickerContainer}>
                       <ThemedText style={styles.dateText}>
-                        No patients available. Connect to backend to load data.
+                        No patients found in the database. Please add patients
+                        to continue.
                       </ThemedText>
                     </ThemedView>
                   )}
