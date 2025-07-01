@@ -504,7 +504,7 @@ export default function PatientsScreen() {
             placeholderTextColor="#999"
           />
 
-          <View style={styles.filterContainer}>
+          {/* <View style={styles.filterContainer}>
             <TouchableOpacity
               style={[
                 styles.filterButton,
@@ -532,7 +532,7 @@ export default function PatientsScreen() {
             >
               <ThemedText style={styles.filterButtonText}>Female</ThemedText>
             </TouchableOpacity>
-          </View>
+          </View>*/}
         </ThemedView>
 
         {/* Patient Count */}
@@ -998,6 +998,9 @@ const styles = StyleSheet.create({
     flex: 1,
     flexShrink: 1,
     flexWrap: "wrap",
+    fontSize: 24,
+    lineHeight: 28,
+    fontWeight: "bold",
   },
   exportButton: {
     backgroundColor: "#2ecc71",

@@ -214,7 +214,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.header}>
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="title">POWER Scheduler</ThemedText>
-        </ThemedView>{" "}
+        </ThemedView>
         <TouchableOpacity style={styles.logoutButton} onPress={logout}>
           <ThemedText style={styles.logoutButtonText}>Logout</ThemedText>
         </TouchableOpacity>
@@ -323,6 +323,17 @@ export default function HomeScreen() {
           <ThemedText>📅 Appointments</ThemedText>
         </TouchableOpacity>
 
+        {(user?.role === "doctor" ||
+          user?.role === "admin" ||
+          user?.role === "system_admin") && (
+          <TouchableOpacity
+            style={styles.menuItem}
+            onPress={() => router.push("/(tabs)/availability")}
+          >
+            <ThemedText>🗓️ Availability</ThemedText>
+          </TouchableOpacity>
+        )}
+
         {user?.role === "patient" && (
           <TouchableOpacity style={styles.menuItem}>
             <ThemedText>👤 My Profile (Coming Soon)</ThemedText>
@@ -346,12 +357,6 @@ export default function HomeScreen() {
               <ThemedText>➕ Register New Patient</ThemedText>
             </TouchableOpacity>
           </>
-        )}
-
-        {user?.role === "admin" && (
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText>⚙️ Settings (Coming Soon)</ThemedText>
-          </TouchableOpacity>
         )}
 
         {/*<TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>

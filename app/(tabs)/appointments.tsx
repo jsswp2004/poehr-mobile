@@ -875,7 +875,10 @@ const styles = StyleSheet.create({
     minWidth: 0, // Allow text to shrink and wrap
   },
   headerTitle: {
-    flex: 1,
+    fontSize: 24,
+    fontWeight: "bold",
+    color: "#2c3e50",
+    textAlign: "left",
     flexShrink: 1,
     flexWrap: "wrap",
   },
