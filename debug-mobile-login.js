@@ -1,7 +1,7 @@
 // Debug script to test the same login flow as the mobile app
 const axios = require('axios');
 
-const API_BASE_URL = "http://localhost:8000";
+const API_BASE_URL = "https://www.powerhealthcareit.com";
 const LOGIN_ENDPOINT = `${API_BASE_URL}/api/auth/login/`;
 
 async function testMobileLogin() {

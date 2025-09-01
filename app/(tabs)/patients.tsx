@@ -1,11 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   Modal,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -70,6 +71,21 @@ export default function PatientsScreen() {
     console.log("🏥 PatientsScreen component mounted");
   }, []);
 
+  // Refresh patients when screen comes into focus (e.g., after registration)
+  useFocusEffect(
+    useCallback(() => {
+      console.log("🔄 PatientsScreen focused - refreshing patient list");
+      if (
+        user &&
+        (user.role === "doctor" ||
+          user.role === "admin" ||
+          user.role === "system_admin")
+      ) {
+        loadPatients();
+      }
+    }, [user])
+  );
+
   useEffect(() => {
     loadUserData();
   }, []);
@@ -132,14 +148,17 @@ export default function PatientsScreen() {
 
       console.log(
         "🔑 Token found, making API request to:",
-        `${API_BASE_URL}/api/users/patients/`
+        `${API_BASE_URL}/api/users/patients/?page_size=100&ordering=-id`
       );
-      const response = await fetch(`${API_BASE_URL}/api/users/patients/`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await fetch(
+        `${API_BASE_URL}/api/users/patients/?page_size=100&ordering=-id`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
       console.log("📡 API Response status:", response.status);
       console.log("📡 API Response headers:", response.headers);
@@ -147,11 +166,38 @@ export default function PatientsScreen() {
       if (response.ok) {
         const data = await response.json();
         console.log("✅ Patients API success! Data received:", data);
+        console.log("✅ Data type:", typeof data);
+        console.log("✅ Is data an array?", Array.isArray(data));
+
+        // Check for pagination information
+        if (data.count !== undefined) {
+          console.log("📄 Pagination detected:");
+          console.log("📄 Total patients in database:", data.count);
+          console.log("📄 Next page URL:", data.next);
+          console.log("📄 Previous page URL:", data.previous);
+        }
 
         // Handle both paginated and non-paginated responses
         const patientsArray = Array.isArray(data) ? data : data.results || [];
-        console.log("📊 Number of patients:", patientsArray.length);
+        console.log("📊 Number of patients returned:", patientsArray.length);
         console.log("🔍 First patient sample:", patientsArray[0]);
+        console.log(
+          "🔍 Last patient sample:",
+          patientsArray[patientsArray.length - 1]
+        );
+
+        // Log all patient names for debugging
+        if (patientsArray.length > 0) {
+          console.log(
+            "👥 All patients:",
+            patientsArray.map(
+              (p: Patient) => `${p.first_name} ${p.last_name} (ID: ${p.id})`
+            )
+          );
+        } else {
+          console.log("⚠️ No patients in the array - this might be the issue!");
+        }
+
         setPatients(patientsArray);
       } else if (response.status === 404) {
         console.log(
@@ -472,6 +518,14 @@ export default function PatientsScreen() {
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={loadingPatients}
+            onRefresh={loadPatients}
+            title="Pull to refresh patients"
+            tintColor="#3498db"
+          />
+        }
       >
         {/* Header */}
         <ThemedView style={styles.header}>
@@ -482,14 +536,25 @@ export default function PatientsScreen() {
               </ThemedText>
             </ThemedView>
             {(user?.role as string) !== "patient" && (
-              <TouchableOpacity
-                style={styles.exportButton}
-                onPress={exportToCSV}
-              >
-                <ThemedText style={styles.exportButtonText}>
-                  Export CSV
-                </ThemedText>
-              </TouchableOpacity>
+              <>
+                <TouchableOpacity
+                  style={styles.refreshButton}
+                  onPress={loadPatients}
+                  disabled={loadingPatients}
+                >
+                  <ThemedText style={styles.refreshButtonText}>
+                    {loadingPatients ? "🔄 Loading..." : "🔄 Refresh"}
+                  </ThemedText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.exportButton}
+                  onPress={exportToCSV}
+                >
+                  <ThemedText style={styles.exportButtonText}>
+                    Export CSV
+                  </ThemedText>
+                </TouchableOpacity>
+              </>
             )}
           </ThemedView>
         </ThemedView>
@@ -1011,6 +1076,21 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   exportButtonText: {
+    color: "white",
+    fontSize: 12,
+    fontWeight: "bold",
+    textAlign: "center",
+  },
+  refreshButton: {
+    backgroundColor: "#3498db",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    minWidth: 80,
+    alignItems: "center",
+    marginRight: 10,
+  },
+  refreshButtonText: {
     color: "white",
     fontSize: 12,
     fontWeight: "bold",

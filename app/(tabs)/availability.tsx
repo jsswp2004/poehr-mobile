@@ -3,12 +3,12 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   ScrollView,
   StyleSheet,
   TouchableOpacity,
   View,
 } from "react-native";
-import { Picker } from "@react-native-picker/picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -49,6 +49,9 @@ export default function AvailabilityScreen() {
   const [holidays, setHolidays] = useState<Holiday[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [showDoctorModal, setShowDoctorModal] = useState(false);
+  const [showRecurrenceModal, setShowRecurrenceModal] = useState(false);
+  const [showBlockTypeModal, setShowBlockTypeModal] = useState(false);
   const isFetchingRef = useRef(false);
 
   // Date picker state
@@ -97,10 +100,15 @@ export default function AvailabilityScreen() {
 
   useEffect(() => {
     const fetchDoctors = async () => {
+      console.log("🔄 Loading doctors...");
       try {
         const token = await AsyncStorage.getItem("access_token");
-        if (!token) return;
+        if (!token) {
+          console.log("❌ No token found for doctors");
+          return;
+        }
 
+        console.log("🔑 Making doctors API request...");
         const response = await fetch(`${API_BASE_URL}/api/users/doctors/`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -108,12 +116,19 @@ export default function AvailabilityScreen() {
           },
         });
 
+        console.log("📡 Doctors API response status:", response.status);
         if (response.ok) {
           const data = await response.json();
+          console.log("✅ Doctors loaded:", data);
+          console.log("📊 Number of doctors:", data?.length || 0);
           setDoctors(data || []);
+        } else {
+          console.log("❌ Failed to load doctors, status:", response.status);
+          const errorText = await response.text();
+          console.log("Error details:", errorText);
         }
       } catch (error) {
-        console.error("Error loading doctors:", error);
+        console.error("💥 Error loading doctors:", error);
         Alert.alert("Error", "Failed to load doctors");
       }
     };
@@ -392,26 +407,28 @@ export default function AvailabilityScreen() {
         {/* Doctor Selection */}
         <ThemedView style={styles.inputContainer}>
           <ThemedText style={styles.inputLabel}>Select Clinician</ThemedText>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={selectedDoctor?.id || ""}
-              onValueChange={(value) => {
-                const doc = doctors.find((d) => d.id === value);
-                setSelectedDoctor(doc || null);
-              }}
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-            >
-              <Picker.Item label="Choose a clinician..." value="" />
-              {doctors.map((doc) => (
-                <Picker.Item
-                  key={doc.id}
-                  label={`Dr. ${doc.first_name} ${doc.last_name}`}
-                  value={doc.id}
-                />
-              ))}
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => {
+              console.log("🔄 Doctor dropdown pressed");
+              setShowDoctorModal(true);
+            }}
+            disabled={doctors.length === 0}
+          >
+            <ThemedText style={styles.dropdownText}>
+              {selectedDoctor
+                ? `Dr. ${selectedDoctor.first_name} ${selectedDoctor.last_name}`
+                : doctors.length > 0
+                ? "Choose a clinician..."
+                : "Loading doctors..."}
+            </ThemedText>
+            <ThemedText style={styles.dropdownArrow}>▼</ThemedText>
+          </TouchableOpacity>
+          {doctors.length === 0 && (
+            <ThemedText style={styles.loadingText}>
+              Loading doctors...
+            </ThemedText>
+          )}
         </ThemedView>
 
         {/* Start Time */}
@@ -469,21 +486,23 @@ export default function AvailabilityScreen() {
         {/* Recurrence */}
         <ThemedView style={styles.inputContainer}>
           <ThemedText style={styles.inputLabel}>Recurrence</ThemedText>
-          <View style={styles.pickerWrapper}>
-            <Picker
-              selectedValue={formData.recurrence}
-              onValueChange={(value) =>
-                setFormData({ ...formData, recurrence: value })
-              }
-              style={styles.picker}
-              itemStyle={styles.pickerItem}
-            >
-              <Picker.Item label="None" value="none" />
-              <Picker.Item label="Daily" value="daily" />
-              <Picker.Item label="Weekly" value="weekly" />
-              <Picker.Item label="Monthly" value="monthly" />
-            </Picker>
-          </View>
+          <TouchableOpacity
+            style={styles.dropdownButton}
+            onPress={() => setShowRecurrenceModal(true)}
+          >
+            <ThemedText style={styles.dropdownText}>
+              {formData.recurrence === "none"
+                ? "None"
+                : formData.recurrence === "daily"
+                ? "Daily"
+                : formData.recurrence === "weekly"
+                ? "Weekly"
+                : formData.recurrence === "monthly"
+                ? "Monthly"
+                : "None"}
+            </ThemedText>
+            <ThemedText style={styles.dropdownArrow}>▼</ThemedText>
+          </TouchableOpacity>
         </ThemedView>
 
         {/* Recurrence End Date */}
@@ -541,21 +560,15 @@ export default function AvailabilityScreen() {
         {formData.is_blocked && (
           <ThemedView style={styles.inputContainer}>
             <ThemedText style={styles.inputLabel}>Block Type</ThemedText>
-            <View style={styles.pickerWrapper}>
-              <Picker
-                selectedValue={formData.block_type}
-                onValueChange={(value) =>
-                  setFormData({ ...formData, block_type: value })
-                }
-                style={styles.picker}
-                itemStyle={styles.pickerItem}
-              >
-                <Picker.Item label="Lunch" value="Lunch" />
-                <Picker.Item label="Meeting" value="Meeting" />
-                <Picker.Item label="Vacation" value="Vacation" />
-                <Picker.Item label="On Leave" value="On Leave" />
-              </Picker>
-            </View>
+            <TouchableOpacity
+              style={styles.dropdownButton}
+              onPress={() => setShowBlockTypeModal(true)}
+            >
+              <ThemedText style={styles.dropdownText}>
+                {formData.block_type}
+              </ThemedText>
+              <ThemedText style={styles.dropdownArrow}>▼</ThemedText>
+            </TouchableOpacity>
           </ThemedView>
         )}
 
@@ -665,6 +678,117 @@ export default function AvailabilityScreen() {
           </ThemedView>
         </ThemedView>
       )}
+
+      {/* Doctor Selection Modal */}
+      <Modal
+        visible={showDoctorModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowDoctorModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ThemedText style={styles.modalTitle}>Select Clinician</ThemedText>
+            <ScrollView style={styles.modalOptions}>
+              {doctors.map((doc) => (
+                <TouchableOpacity
+                  key={doc.id}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    console.log("🔄 Selected doctor:", doc);
+                    setSelectedDoctor(doc);
+                    setShowDoctorModal(false);
+                  }}
+                >
+                  <ThemedText style={styles.modalOptionText}>
+                    Dr. {doc.first_name} {doc.last_name}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowDoctorModal(false)}
+            >
+              <ThemedText style={styles.modalCloseText}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Recurrence Selection Modal */}
+      <Modal
+        visible={showRecurrenceModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowRecurrenceModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ThemedText style={styles.modalTitle}>Select Recurrence</ThemedText>
+            <ScrollView style={styles.modalOptions}>
+              {["none", "daily", "weekly", "monthly"].map((value) => (
+                <TouchableOpacity
+                  key={value}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setFormData({ ...formData, recurrence: value });
+                    setShowRecurrenceModal(false);
+                  }}
+                >
+                  <ThemedText style={styles.modalOptionText}>
+                    {value === "none"
+                      ? "None"
+                      : value.charAt(0).toUpperCase() + value.slice(1)}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowRecurrenceModal(false)}
+            >
+              <ThemedText style={styles.modalCloseText}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Block Type Selection Modal */}
+      <Modal
+        visible={showBlockTypeModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowBlockTypeModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <ThemedText style={styles.modalTitle}>Select Block Type</ThemedText>
+            <ScrollView style={styles.modalOptions}>
+              {["Lunch", "Meeting", "Vacation", "On Leave"].map((value) => (
+                <TouchableOpacity
+                  key={value}
+                  style={styles.modalOption}
+                  onPress={() => {
+                    setFormData({ ...formData, block_type: value });
+                    setShowBlockTypeModal(false);
+                  }}
+                >
+                  <ThemedText style={styles.modalOptionText}>
+                    {value}
+                  </ThemedText>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setShowBlockTypeModal(false)}
+            >
+              <ThemedText style={styles.modalCloseText}>Cancel</ThemedText>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -778,11 +902,14 @@ const styles = StyleSheet.create({
     elevation: 2,
     overflow: "hidden",
   },
+  pickerTouchable: {
+    flex: 1,
+  },
   picker: {
     height: 50,
     backgroundColor: "transparent",
     color: "#333",
-    marginVertical: -8,
+    marginVertical: 0,
   },
   pickerItem: {
     fontSize: 16,
@@ -928,5 +1055,95 @@ const styles = StyleSheet.create({
     color: "#666",
     textAlign: "center",
     padding: 20,
+  },
+  loadingText: {
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
+    marginTop: 5,
+  },
+  // Custom dropdown styles
+  dropdownButton: {
+    borderWidth: 1,
+    borderColor: "#ddd",
+    borderRadius: 8,
+    padding: 12,
+    backgroundColor: "white",
+    minHeight: 50,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 1,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  dropdownText: {
+    fontSize: 16,
+    color: "#333",
+    flex: 1,
+  },
+  dropdownArrow: {
+    fontSize: 12,
+    color: "#666",
+    marginLeft: 8,
+  },
+  // Modal styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContainer: {
+    backgroundColor: "white",
+    borderRadius: 10,
+    margin: 20,
+    maxHeight: "70%",
+    minWidth: "80%",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "bold",
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#eee",
+    textAlign: "center",
+  },
+  modalOptions: {
+    maxHeight: 300,
+  },
+  modalOption: {
+    padding: 15,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+  },
+  modalOptionText: {
+    fontSize: 16,
+    color: "#333",
+  },
+  modalCloseButton: {
+    backgroundColor: "#e74c3c",
+    padding: 15,
+    borderBottomLeftRadius: 10,
+    borderBottomRightRadius: 10,
+  },
+  modalCloseText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "bold",
+    textAlign: "center",
   },
 });

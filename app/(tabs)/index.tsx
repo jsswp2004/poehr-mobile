@@ -125,7 +125,47 @@ export default function HomeScreen() {
             typeof data[0].appointment_datetime
           );
         }
-        setTodayAppointments(data);
+
+        // Filter appointments for today's date
+        const filteredAppointments = data.filter((appointment: any) => {
+          if (!appointment) return false;
+
+          let appointmentDate;
+          if (appointment.appointment_datetime) {
+            // Extract date from appointment_datetime (format: 2025-08-31T19:30:00+00:00)
+            appointmentDate = moment(appointment.appointment_datetime).format(
+              "YYYY-MM-DD"
+            );
+            console.log(
+              `🔍 Appointment ${appointment.id}: datetime=${appointment.appointment_datetime}, extracted date=${appointmentDate}`
+            );
+          } else if (appointment.appointment_date) {
+            // Use legacy appointment_date field
+            appointmentDate = moment(appointment.appointment_date).format(
+              "YYYY-MM-DD"
+            );
+            console.log(
+              `🔍 Appointment ${appointment.id}: legacy date=${appointment.appointment_date}, formatted=${appointmentDate}`
+            );
+          } else {
+            console.log(
+              `🔍 Appointment ${appointment.id}: no date field found`
+            );
+            return false;
+          }
+
+          const matches = appointmentDate === today;
+          console.log(
+            `🔍 Appointment ${appointment.id}: ${appointmentDate} === ${today} ? ${matches}`
+          );
+          return matches;
+        });
+
+        console.log(
+          "🔍 Filtered appointments for today:",
+          filteredAppointments.length
+        );
+        setTodayAppointments(filteredAppointments);
       } else {
         console.log("Failed to load appointments:", response.status);
       }

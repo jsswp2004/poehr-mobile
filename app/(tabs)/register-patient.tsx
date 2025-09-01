@@ -8,7 +8,6 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
-  View,
 } from "react-native";
 
 import { ThemedText } from "@/components/ThemedText";
@@ -29,19 +28,12 @@ export default function RegisterPatientScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    username: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
     first_name: "",
     last_name: "",
+    username: "",
+    email: "",
     phone_number: "",
-    date_of_birth: "",
-    gender: "",
-    address: "",
-    emergency_contact_name: "",
-    emergency_contact_phone: "",
-    medical_history: "",
+    password: "",
   });
 
   useEffect(() => {
@@ -88,17 +80,12 @@ export default function RegisterPatientScreen() {
 
   const validateForm = () => {
     const required = [
-      "username",
-      "email",
-      "password",
       "first_name",
       "last_name",
+      "username",
+      "email",
       "phone_number",
-      "date_of_birth",
-      "gender",
-      "address",
-      "emergency_contact_name",
-      "emergency_contact_phone",
+      "password",
     ];
 
     for (const field of required) {
@@ -106,11 +93,6 @@ export default function RegisterPatientScreen() {
         Alert.alert("Error", `${field.replace("_", " ")} is required`);
         return false;
       }
-    }
-
-    if (formData.password !== formData.confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
-      return false;
     }
 
     if (formData.password.length < 8) {
@@ -128,6 +110,7 @@ export default function RegisterPatientScreen() {
   };
 
   const handleSubmit = async () => {
+    console.log("🚀 Starting patient registration...");
     if (!validateForm()) return;
 
     setLoading(true);
@@ -144,8 +127,6 @@ export default function RegisterPatientScreen() {
         role: "patient",
       };
 
-      delete registrationData.confirmPassword;
-
       console.log("📝 Registering patient with data:", registrationData);
 
       const response = await fetch(`${API_BASE_URL}/api/users/register/`, {
@@ -160,12 +141,33 @@ export default function RegisterPatientScreen() {
       const responseData = await response.json();
 
       if (response.ok) {
-        Alert.alert("Success", "Patient registered successfully!", [
-          {
-            text: "OK",
-            onPress: () => router.back(),
-          },
-        ]);
+        console.log("✅ Patient registered successfully:", responseData);
+
+        // Reset form
+        setFormData({
+          first_name: "",
+          last_name: "",
+          username: "",
+          email: "",
+          phone_number: "",
+          password: "",
+        });
+
+        Alert.alert(
+          "Registration Successful! 🎉",
+          `Patient ${registrationData.first_name} ${registrationData.last_name} has been registered successfully.\n\nUsername: ${registrationData.username}`,
+          [
+            {
+              text: "Register Another",
+              style: "default",
+            },
+            {
+              text: "Go Back",
+              style: "cancel",
+              onPress: () => router.back(),
+            },
+          ]
+        );
       } else {
         console.error("❌ Registration failed:", responseData);
         const errorMessage =
@@ -202,71 +204,18 @@ export default function RegisterPatientScreen() {
         showsVerticalScrollIndicator={false}
       >
         <ThemedView style={styles.header}>
-          <ThemedText style={styles.title}>Register New Patient</ThemedText>
-          <ThemedText style={styles.subtitle}>
-            Enter patient information below
-          </ThemedText>
+          <ThemedText style={styles.title}>Quick Register</ThemedText>
+          <ThemedText style={styles.subtitle}>Patient Information</ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.form}>
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Username *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.username}
-              onChangeText={(value) => updateFormData("username", value)}
-              placeholder="Enter username"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Email *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.email}
-              onChangeText={(value) => updateFormData("email", value)}
-              placeholder="Enter email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Password *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.password}
-              onChangeText={(value) => updateFormData("password", value)}
-              placeholder="Enter password (min 8 characters)"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Confirm Password *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.confirmPassword}
-              onChangeText={(value) => updateFormData("confirmPassword", value)}
-              placeholder="Confirm password"
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>First Name *</ThemedText>
+            <ThemedText style={styles.label}>First Name</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.first_name}
               onChangeText={(value) => updateFormData("first_name", value)}
-              placeholder="Enter first name"
+              placeholder="First Name"
               autoCapitalize="words"
             />
           </ThemedView>
@@ -277,100 +226,57 @@ export default function RegisterPatientScreen() {
               style={styles.input}
               value={formData.last_name}
               onChangeText={(value) => updateFormData("last_name", value)}
-              placeholder="Enter last name"
+              placeholder="Last Name *"
               autoCapitalize="words"
             />
           </ThemedView>
 
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Phone Number *</ThemedText>
+            <ThemedText style={styles.label}>Username *</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={formData.username}
+              onChangeText={(value) => updateFormData("username", value)}
+              placeholder="Username *"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputGroup}>
+            <ThemedText style={styles.label}>Email</ThemedText>
+            <TextInput
+              style={styles.input}
+              value={formData.email}
+              onChangeText={(value) => updateFormData("email", value)}
+              placeholder="Email"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+          </ThemedView>
+
+          <ThemedView style={styles.inputGroup}>
+            <ThemedText style={styles.label}>Phone Number</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.phone_number}
               onChangeText={(value) => updateFormData("phone_number", value)}
-              placeholder="Enter phone number"
+              placeholder="Phone Number"
               keyboardType="phone-pad"
             />
           </ThemedView>
 
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>
-              Date of Birth * (YYYY-MM-DD)
-            </ThemedText>
+            <ThemedText style={styles.label}>Password *</ThemedText>
             <TextInput
               style={styles.input}
-              value={formData.date_of_birth}
-              onChangeText={(value) => updateFormData("date_of_birth", value)}
-              placeholder="YYYY-MM-DD"
-              keyboardType="numeric"
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Gender *</ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.gender}
-              onChangeText={(value) => updateFormData("gender", value)}
-              placeholder="Enter gender"
-              autoCapitalize="words"
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Address *</ThemedText>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.address}
-              onChangeText={(value) => updateFormData("address", value)}
-              placeholder="Enter address"
-              multiline
-              numberOfLines={3}
-              autoCapitalize="words"
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>
-              Emergency Contact Name *
-            </ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.emergency_contact_name}
-              onChangeText={(value) =>
-                updateFormData("emergency_contact_name", value)
-              }
-              placeholder="Enter emergency contact name"
-              autoCapitalize="words"
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>
-              Emergency Contact Phone *
-            </ThemedText>
-            <TextInput
-              style={styles.input}
-              value={formData.emergency_contact_phone}
-              onChangeText={(value) =>
-                updateFormData("emergency_contact_phone", value)
-              }
-              placeholder="Enter emergency contact phone"
-              keyboardType="phone-pad"
-            />
-          </ThemedView>
-
-          <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>
-              Medical History (Optional)
-            </ThemedText>
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.medical_history}
-              onChangeText={(value) => updateFormData("medical_history", value)}
-              placeholder="Enter any relevant medical history"
-              multiline
-              numberOfLines={4}
+              value={formData.password}
+              onChangeText={(value) => updateFormData("password", value)}
+              placeholder="Password *"
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
             />
           </ThemedView>
 
@@ -383,7 +289,7 @@ export default function RegisterPatientScreen() {
             disabled={loading}
           >
             <ThemedText style={styles.submitButtonText}>
-              {loading ? "Registering..." : "Register Patient"}
+              {loading ? "Creating Patient Account..." : "REGISTER"}
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
