@@ -22,7 +22,7 @@ interface User {
   username: string;
   firstName?: string;
   lastName?: string;
-  role: "doctor" | "admin" | "system_admin" | "patient";
+  role: "doctor" | "admin" | "system_admin" | "patient" | "registrar";
   email?: string;
   user_id: number;
   organization?: string;
@@ -79,7 +79,8 @@ export default function PatientsScreen() {
         user &&
         (user.role === "doctor" ||
           user.role === "admin" ||
-          user.role === "system_admin")
+          user.role === "system_admin" ||
+          user.role === "registrar")
       ) {
         loadPatients();
       }
@@ -97,7 +98,8 @@ export default function PatientsScreen() {
       if (
         user.role === "doctor" ||
         user.role === "admin" ||
-        user.role === "system_admin"
+        user.role === "system_admin" ||
+        user.role === "registrar"
       ) {
         console.log("✅ User has access to patients, loading patients...");
         loadPatients();
@@ -122,7 +124,8 @@ export default function PatientsScreen() {
             | "doctor"
             | "admin"
             | "system_admin"
-            | "patient",
+            | "patient"
+            | "registrar",
           email: decodedToken.email,
           user_id: decodedToken.user_id,
           organization: decodedToken.organization || "POWER IT",
@@ -710,7 +713,8 @@ export default function PatientsScreen() {
               {!isEditingPatient ? (
                 <>
                   {(user?.role === "admin" ||
-                    user?.role === "system_admin") && (
+                    user?.role === "system_admin" ||
+                    user?.role === "registrar") && (
                     <>
                       <TouchableOpacity
                         style={styles.editButton}

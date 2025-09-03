@@ -72,6 +72,7 @@ export default function HomeScreen() {
       const token = await AsyncStorage.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
+        
         setUser({
           username: decodedToken.username,
           firstName: decodedToken.first_name,
@@ -79,7 +80,7 @@ export default function HomeScreen() {
           role: decodedToken.role,
           email: decodedToken.email,
           user_id: decodedToken.user_id,
-          organization: decodedToken.organization || "POWER IT", // Default to POWER IT
+          organization: decodedToken.organization_name || "Unknown Organization", // Fixed: use organization_name
         });
       }
     } catch (error) {
@@ -176,31 +177,6 @@ export default function HomeScreen() {
     }
   };
 
-  const logout = async () => {
-    console.log("🚪 Logout button pressed");
-    // Use Alert.alert for mobile compatibility instead of window.confirm
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          console.log("🚪 Logging out user...");
-          try {
-            await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
-            console.log("🚪 Tokens cleared, navigating to login...");
-            // Use router.replace instead of window.location.href for mobile compatibility
-            router.replace("/login");
-          } catch (error) {
-            console.error("🚪 Error during logout:", error);
-          }
-        },
-      },
-    ]);
-  };
   const clearAuthForTesting = async () => {
     Alert.alert(
       "Clear Authentication",
@@ -255,9 +231,6 @@ export default function HomeScreen() {
         <ThemedView style={styles.titleContainer}>
           <ThemedText type="title">POWER Scheduler</ThemedText>
         </ThemedView>
-        <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-          <ThemedText style={styles.logoutButtonText}>Logout</ThemedText>
-        </TouchableOpacity>
       </ThemedView>
 
       <ThemedView style={styles.userInfo}>
@@ -266,7 +239,7 @@ export default function HomeScreen() {
         </ThemedText>
         <ThemedText>Role: {user?.role}</ThemedText>
         <ThemedText>
-          Organization: {user?.organization || "POWER IT"}
+          Organization: {user?.organization || "Unknown Organization"}
         </ThemedText>
         {/*<ThemedText>Email: {user?.email}</ThemedText>*/}
       </ThemedView>
@@ -421,16 +394,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
-  },
-  logoutButton: {
-    backgroundColor: "#e74c3c",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-  },
-  logoutButtonText: {
-    color: "white",
-    fontWeight: "bold",
   },
   userInfo: {
     padding: 20,

@@ -1,16 +1,16 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
+import { router } from "expo-router";
+import { jwtDecode } from "jwt-decode";
 import React, { useState } from "react";
 import {
-  View,
-  TextInput,
+  Alert,
   StyleSheet,
   Text,
-  Alert,
+  TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
-import axios from "axios";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { jwtDecode } from "jwt-decode";
-import { router } from "expo-router";
 import { API_ENDPOINTS } from "../config/api";
 
 const LoginScreen = () => {
@@ -101,8 +101,8 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>PoEHR Mobile</Text>
-      <Text style={styles.subtitle}>Welcome back</Text>
+      <Text style={styles.title}>POWER Mobile</Text>
+      <Text style={styles.subtitle}>Welcome back!</Text>
 
       <TextInput
         placeholder="Username"
@@ -130,7 +130,7 @@ const LoginScreen = () => {
         </Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => router.push("./register")}>
-        <Text style={styles.link}>Don&apos;t have an account? Register</Text>
+        <Text>Don&apos;t have an account? Ask your site administrator</Text>
       </TouchableOpacity>
     </View>
   );
