@@ -52,6 +52,14 @@ interface Patient {
 export default function PatientsScreen() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Debug state for visible debugging
+  const [debugInfo, setDebugInfo] = useState<{
+    jwtRole: string;
+    userRole: string;
+    hasAccess: boolean;
+    errorMessage: string;
+  } | null>(null);
 
   // Patient list state
   const [patients, setPatients] = useState<Patient[]>([]);
@@ -491,18 +499,19 @@ export default function PatientsScreen() {
     setEditedPatient(null);
   };
 
-  // Only show to doctors, admins, and system_admins
+  // Only show to doctors, admins, registrars, and system_admins
   if (
     user?.role !== "doctor" &&
     user?.role !== "admin" &&
-    user?.role !== "system_admin"
+    user?.role !== "system_admin" &&
+    user?.role !== "registrar"
   ) {
     return (
       <ThemedView style={styles.container}>
         <ThemedView style={styles.accessDenied}>
           <ThemedText type="title">Access Denied</ThemedText>
           <ThemedText style={styles.accessDeniedText}>
-            Only doctors and administrators can access the patient list.
+            Only doctors, administrators, and registrars can access the patient list.
           </ThemedText>
           <TouchableOpacity
             style={styles.backButton}
@@ -556,6 +565,7 @@ export default function PatientsScreen() {
                     {loadingPatients ? "🔄 Loading..." : "🔄 Refresh"}
                   </ThemedText>
                 </TouchableOpacity>
+                {/* Export Button 
                 <TouchableOpacity
                   style={styles.exportButton}
                   onPress={exportToCSV}
@@ -564,6 +574,7 @@ export default function PatientsScreen() {
                     Export CSV
                   </ThemedText>
                 </TouchableOpacity>
+                */}
               </>
             )}
           </ThemedView>
@@ -888,7 +899,17 @@ export default function PatientsScreen() {
                   )}
                 </ThemedView>
 
-                {/* Gender */}
+                {/* Gender 
+                <ThemedView style={styles.detailRow}>
+                  <ThemedText style={styles.detailLabel}>Gender:</ThemedText>
+                  {isEditingPatient ? (
+                    <TextInput
+                      style={styles.editInput}
+                      value={editedPatient?.gender || ""}
+                      onChangeText={(value) =>
+                        updateEditedPatientField("gender", value)
+                      }
+                      placeholder="Gender"
                 <ThemedView style={styles.detailRow}>
                   <ThemedText style={styles.detailLabel}>Gender:</ThemedText>
                   {isEditingPatient ? (
@@ -901,6 +922,7 @@ export default function PatientsScreen() {
                       placeholder="Gender"
                     />
                   ) : (
+                     
                     <ThemedText style={styles.detailValue}>
                       {selectedPatient.gender
                         ? selectedPatient.gender.charAt(0).toUpperCase() +
@@ -909,6 +931,7 @@ export default function PatientsScreen() {
                     </ThemedText>
                   )}
                 </ThemedView>
+                 */}
 
                 {/* Address */}
                 <ThemedView style={styles.detailRow}>
@@ -932,60 +955,11 @@ export default function PatientsScreen() {
                 </ThemedView>
               </ThemedView>
 
-              {/* Emergency Contact Section */}
-              <ThemedView style={styles.detailSection}>
-                <ThemedText type="subtitle">Emergency Contact</ThemedText>
 
-                {/* Emergency Contact Name */}
-                <ThemedView style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Name:</ThemedText>
-                  {isEditingPatient ? (
-                    <TextInput
-                      style={styles.editInput}
-                      value={editedPatient?.emergency_contact_name || ""}
-                      onChangeText={(value) =>
-                        updateEditedPatientField(
-                          "emergency_contact_name",
-                          value
-                        )
-                      }
-                      placeholder="Emergency Contact Name"
-                    />
-                  ) : (
-                    <ThemedText style={styles.detailValue}>
-                      {selectedPatient.emergency_contact_name || "Not provided"}
-                    </ThemedText>
-                  )}
-                </ThemedView>
-
-                {/* Emergency Contact Phone */}
-                <ThemedView style={styles.detailRow}>
-                  <ThemedText style={styles.detailLabel}>Phone:</ThemedText>
-                  {isEditingPatient ? (
-                    <TextInput
-                      style={styles.editInput}
-                      value={editedPatient?.emergency_contact_phone || ""}
-                      onChangeText={(value) =>
-                        updateEditedPatientField(
-                          "emergency_contact_phone",
-                          value
-                        )
-                      }
-                      placeholder="Emergency Contact Phone"
-                      keyboardType="phone-pad"
-                    />
-                  ) : (
-                    <ThemedText style={styles.detailValue}>
-                      {selectedPatient.emergency_contact_phone ||
-                        "Not provided"}
-                    </ThemedText>
-                  )}
-                </ThemedView>
-              </ThemedView>
 
               {/* Medical History Section */}
               <ThemedView style={styles.detailSection}>
-                <ThemedText type="subtitle">Medical History</ThemedText>
+                <ThemedText type="subtitle">Notes</ThemedText>
                 {isEditingPatient ? (
                   <TextInput
                     style={styles.editTextArea}
@@ -1004,7 +978,7 @@ export default function PatientsScreen() {
                   </ThemedText>
                 )}
               </ThemedView>
-
+              {/* Account Information Section
               <ThemedView style={styles.detailSection}>
                 <ThemedText type="subtitle">Account Information</ThemedText>
                 <ThemedView style={styles.detailRow}>
@@ -1034,6 +1008,7 @@ export default function PatientsScreen() {
                   </ThemedText>
                 </ThemedView>
               </ThemedView>
+               */}
             </ScrollView>
           )}
         </View>

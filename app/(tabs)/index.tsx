@@ -355,7 +355,8 @@ export default function HomeScreen() {
 
         {(user?.role === "doctor" ||
           user?.role === "admin" ||
-          user?.role === "system_admin") && (
+          user?.role === "system_admin" ||
+          user?.role === "registrar") && (
           <>
             <TouchableOpacity
               style={styles.menuItem}
