@@ -95,6 +95,10 @@ export default function PatientsScreen() {
     if (user) {
       console.log("👤 User loaded in Patients tab:", user);
       console.log("🔐 User role:", user.role);
+      console.log("🔍 PATIENTS DEBUG - Role type check:", typeof user.role);
+      console.log("🔍 PATIENTS DEBUG - Role === 'registrar':", user.role === "registrar");
+      console.log("🔍 PATIENTS DEBUG - Role === 'admin':", user.role === "admin");
+      console.log("🔍 PATIENTS DEBUG - Role === 'doctor':", user.role === "doctor");
       if (
         user.role === "doctor" ||
         user.role === "admin" ||
@@ -105,6 +109,7 @@ export default function PatientsScreen() {
         loadPatients();
       } else {
         console.log("❌ User does not have access to patients, redirecting...");
+        console.log("❌ PATIENTS DEBUG - Denied role was:", user.role);
         // Redirect patients to home tab
         router.replace("/(tabs)");
       }
@@ -116,6 +121,8 @@ export default function PatientsScreen() {
       const token = await AsyncStorage.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
+        console.log("🔍 PATIENTS DEBUG - Raw JWT role:", decodedToken.role);
+        console.log("🔍 PATIENTS DEBUG - Full JWT token:", decodedToken);
         setUser({
           username: decodedToken.username,
           firstName: decodedToken.first_name,

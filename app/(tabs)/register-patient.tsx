@@ -62,7 +62,7 @@ export default function RegisterPatientScreen() {
       setUser(userData);
 
       // Check if user has permission
-      if (!["doctor", "admin", "system_admin"].includes(userData.role)) {
+      if (!["doctor", "admin", "system_admin", "registrar"].includes(userData.role)) {
         Alert.alert(
           "Access Denied",
           "You don't have permission to register patients",

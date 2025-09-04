@@ -100,14 +100,17 @@ const styles = StyleSheet.create({
   leftSection: {
     flex: 1,
     alignItems: 'flex-start',
+    justifyContent: 'flex-end',
   },
   centerSection: {
     flex: 2,
     alignItems: 'center',
+    justifyContent: 'flex-end',
   },
   rightSection: {
     flex: 1,
     alignItems: 'flex-end',
+    justifyContent: 'flex-end',
   },
   logoContainer: {
     width: 60, // Increased from 40 to 60
