@@ -17,7 +17,8 @@ const LoginScreen = () => {
   const [loading, setLoading] = useState(false);
 
   const handleLogin = async () => {
-    if (!formData.username || !formData.password) {
+    const username = formData.username.trim();
+    if (!username || !formData.password) {
       Alert.alert("Error", "Please fill in all fields");
       return;
     }
@@ -31,7 +32,10 @@ const LoginScreen = () => {
     try {
       console.log("📡 Sending login request to:", API_ENDPOINTS.LOGIN);
 
-      const res = await axios.post(API_ENDPOINTS.LOGIN, formData);
+      const res = await axios.post(API_ENDPOINTS.LOGIN, {
+        username,
+        password: formData.password,
+      });
 
       console.log("✅ Login response status:", res.status);
       console.log("📄 Response data keys:", Object.keys(res.data));
@@ -100,11 +104,19 @@ const LoginScreen = () => {
         value={formData.username}
         onChangeText={(val) => setFormData({ ...formData, username: val })}
         autoCapitalize="none"
+        autoCorrect={false}
+        spellCheck={false}
+        autoComplete="username"
+        textContentType="username"
       />
 
       <TextInput
         placeholder="Password"
         secureTextEntry
+        autoCapitalize="none"
+        autoCorrect={false}
+        autoComplete="password"
+        textContentType="password"
         style={styles.input}
         value={formData.password}
         onChangeText={(val) => setFormData({ ...formData, password: val })}
