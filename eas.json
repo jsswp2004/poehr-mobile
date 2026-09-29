@@ -15,7 +15,7 @@
       "distribution": "internal",
       "channel": "preview",
       "ios": {
-        "image": "latest",
+        "image": "macos-sequoia-15.6-xcode-26.2",
         "resourceClass": "m1-medium"
       }
     },
@@ -23,7 +23,7 @@
       "channel": "production",
       "autoIncrement": true,
       "ios": {
-        "image": "latest",
+        "image": "macos-sequoia-15.6-xcode-26.2",
         "resourceClass": "m1-medium"
       }
     }
