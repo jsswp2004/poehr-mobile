@@ -9,13 +9,6 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "description": "POWER Mobile - Advanced Healthcare Management Platform",
-    "keywords": [
-      "healthcare",
-      "ehr",
-      "appointments",
-      "medical"
-    ],
-    "privacy": "unlisted",
     "platforms": [
       "ios",
       "android",
@@ -24,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.powerit.poehrmobile",
-      "buildNumber": "9",
+      "buildNumber": "10",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -49,11 +42,8 @@
       "versionCode": 1,
       "permissions": [
         "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.INTERNET",
         "android.permission.ACCESS_NETWORK_STATE"
-      ],
-      "usesCleartextTraffic": false
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -70,7 +60,9 @@
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
-      ]
+      ],
+      "@react-native-community/datetimepicker",
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": true
