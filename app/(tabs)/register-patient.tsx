@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import React, { useEffect, useState } from "react";
@@ -42,7 +42,7 @@ export default function RegisterPatientScreen() {
 
   const loadUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         router.replace("/login");
         return;
@@ -115,7 +115,7 @@ export default function RegisterPatientScreen() {
 
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         Alert.alert("Error", "Authentication required");
         router.replace("/login");

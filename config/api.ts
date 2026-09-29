@@ -1,5 +1,6 @@
 // config/api.ts
 // Environment-based API configuration
+import { tokenStore } from "@/utils/tokenStore";
 
 // Development URLs
 const DEV_LOCALHOST_URL = "http://localhost:8000"; // Localhost for emulator testing
@@ -35,10 +36,7 @@ export const API_ENDPOINTS = {
 
 // Helper function to get headers with authorization
 export const getAuthHeaders = async () => {
-  const AsyncStorage = await import(
-    "@react-native-async-storage/async-storage"
-  );
-  const token = await AsyncStorage.default.getItem("access_token");
+  const token = await tokenStore.getItem("access_token");
   return {
     "Content-Type": "application/json",
     ...(token && { Authorization: `Bearer ${token}` }),

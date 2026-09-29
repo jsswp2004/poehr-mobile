@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { router } from "expo-router";
 import moment from "moment";
@@ -74,7 +74,7 @@ export default function BlockedDateModal({
     setLoading(true);
 
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         setDoctors([]);
         return;
@@ -139,7 +139,7 @@ export default function BlockedDateModal({
 
     setSaving(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         Alert.alert("Error", "Authentication required");
         return;

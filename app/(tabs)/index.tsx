@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { Image } from "expo-image";
 import { router } from "expo-router";
 import { jwtDecode } from "jwt-decode";
@@ -69,7 +69,7 @@ export default function HomeScreen() {
 
   const loadUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
         
@@ -93,7 +93,7 @@ export default function HomeScreen() {
   const loadTodayAppointments = async () => {
     setLoadingAppointments(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) return;
 
       const today = moment().format("YYYY-MM-DD");
@@ -191,7 +191,7 @@ export default function HomeScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+              await tokenStore.multiRemove(["access_token", "refresh_token"]);
               router.replace("/login");
             } catch (error) {
               console.error("🚪 Error during auth clear:", error);
@@ -250,7 +250,7 @@ export default function HomeScreen() {
           Authentication system is working! You have successfully:
         </ThemedText>
         <ThemedText>• ✅ Logged in with JWT tokens</ThemedText>
-        <ThemedText>• ✅ Stored tokens in AsyncStorage</ThemedText>
+        <ThemedText>• ✅ Stored tokens in encrypted storage</ThemedText>
         <ThemedText>• ✅ Role-based authentication</ThemedText>
         <ThemedText>• ✅ Protected routes</ThemedText>
       </ThemedView>*/}

@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import axios from "axios";
 import { router } from "expo-router";
 import React, { useState } from "react";
@@ -45,8 +45,8 @@ const LoginScreen = () => {
       }
 
       console.log("💾 Storing tokens...");
-      await AsyncStorage.setItem("access_token", access);
-      await AsyncStorage.setItem("refresh_token", refresh);
+      await tokenStore.setItem("access_token", access);
+      await tokenStore.setItem("refresh_token", refresh);
 
 
       console.log("🚀 Navigating to main app...");

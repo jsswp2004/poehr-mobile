@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
@@ -101,7 +101,7 @@ export default function AppointmentsScreen() {
 
   const loadUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
         setUser({
@@ -122,7 +122,7 @@ export default function AppointmentsScreen() {
 
   const loadAppointments = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.log("❌ No token found for loading appointments");
         return;
@@ -161,7 +161,7 @@ export default function AppointmentsScreen() {
   };
   const loadDoctors = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.log("❌ No auth token found for loading doctors");
         setDoctors([]);
@@ -204,7 +204,7 @@ export default function AppointmentsScreen() {
 
   const loadBlockedDates = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.log("❌ No auth token found for loading blocked dates");
         setBlockedDates([]);
@@ -424,7 +424,7 @@ export default function AppointmentsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem("access_token");
+              const token = await tokenStore.getItem("access_token");
               if (!token) return;
 
               const response = await fetch(
@@ -479,7 +479,7 @@ export default function AppointmentsScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem("access_token");
+              const token = await tokenStore.getItem("access_token");
               if (!token) return;
 
               const response = await fetch(

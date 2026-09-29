@@ -5,7 +5,7 @@
  * You can import and use this in any screen to debug the issue
  */
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { jwtDecode } from "jwt-decode";
 import React, { useState } from "react";
 import {
@@ -48,15 +48,15 @@ export default function PatientAPIDebugger() {
     clearResults();
 
     try {
-      // Test 1: Check AsyncStorage for token
+      // Test 1: Check token store for token
       addResult("Token Check", "running", "Checking for access token...");
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
 
       if (!token) {
         addResult(
           "Token Check",
           "error",
-          "No access token found in AsyncStorage"
+          "No access token found in token store"
         );
         setIsRunning(false);
         return;

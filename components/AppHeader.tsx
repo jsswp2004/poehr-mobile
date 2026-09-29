@@ -1,5 +1,5 @@
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { tokenStore } from "@/utils/tokenStore";
 import { router } from 'expo-router';
 import React from 'react';
 import {
@@ -30,8 +30,8 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ showBackButton = false }) 
           style: 'destructive',
           onPress: async () => {
             try {
-              await AsyncStorage.removeItem('access_token');
-              await AsyncStorage.removeItem('refresh_token');
+              await tokenStore.removeItem('access_token');
+              await tokenStore.removeItem('refresh_token');
               router.replace('/login');
             } catch (error) {
               console.error('Error during logout:', error);

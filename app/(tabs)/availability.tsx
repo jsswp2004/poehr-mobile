@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -102,7 +102,7 @@ export default function AvailabilityScreen() {
     const fetchDoctors = async () => {
       console.log("🔄 Loading doctors...");
       try {
-        const token = await AsyncStorage.getItem("access_token");
+        const token = await tokenStore.getItem("access_token");
         if (!token) {
           console.log("❌ No token found for doctors");
           return;
@@ -138,7 +138,7 @@ export default function AvailabilityScreen() {
   useEffect(() => {
     const fetchHolidays = async () => {
       try {
-        const token = await AsyncStorage.getItem("access_token");
+        const token = await tokenStore.getItem("access_token");
         if (!token) return;
 
         const response = await fetch(`${API_BASE_URL}/api/holidays/`, {
@@ -163,7 +163,7 @@ export default function AvailabilityScreen() {
     if (!selectedDoctor || isFetchingRef.current) return;
     try {
       isFetchingRef.current = true;
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) return;
 
       const response = await fetch(`${API_BASE_URL}/api/availability/`, {
@@ -237,7 +237,7 @@ export default function AvailabilityScreen() {
     console.log("Form data:", formData);
 
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.error("No token found");
         return;
@@ -322,7 +322,7 @@ export default function AvailabilityScreen() {
           style: "destructive",
           onPress: async () => {
             try {
-              const token = await AsyncStorage.getItem("access_token");
+              const token = await tokenStore.getItem("access_token");
               if (!token) return;
 
               const response = await fetch(

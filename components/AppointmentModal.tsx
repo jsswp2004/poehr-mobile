@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Picker } from "@react-native-picker/picker";
 import moment from "moment";
@@ -98,8 +98,8 @@ export default function AppointmentModal({
     async (response: Response, errorData: any) => {
       if (response.status === 401 && errorData.code === "token_not_valid") {
         console.log("🔐 Token expired during data loading, clearing storage");
-        await AsyncStorage.removeItem("access_token");
-        await AsyncStorage.removeItem("refresh_token");
+        await tokenStore.removeItem("access_token");
+        await tokenStore.removeItem("refresh_token");
         Alert.alert(
           "Session Expired",
           "Your session has expired. Please log in again.",
@@ -134,7 +134,7 @@ export default function AppointmentModal({
   const loadUsersData = useCallback(async () => {
     setLoading(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.log("❌ No token found, user needs to log in");
         Alert.alert(
@@ -502,7 +502,7 @@ export default function AppointmentModal({
   const performSave = async () => {
     setSaving(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         Alert.alert("Error", "No authentication token found");
         setSaving(false);
@@ -662,8 +662,8 @@ export default function AppointmentModal({
         // Handle token expiration
         if (response.status === 401 && errorData.code === "token_not_valid") {
           console.log("🔐 Token expired, redirecting to login");
-          await AsyncStorage.removeItem("access_token");
-          await AsyncStorage.removeItem("refresh_token");
+          await tokenStore.removeItem("access_token");
+          await tokenStore.removeItem("refresh_token");
           Alert.alert(
             "Session Expired",
             "Your session has expired. Please log in again.",

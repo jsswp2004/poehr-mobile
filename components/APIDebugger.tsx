@@ -1,7 +1,7 @@
 // components/APIDebugger.tsx
 // A debug component to test API connectivity and view configuration
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, TouchableOpacity } from "react-native";
 
@@ -24,7 +24,7 @@ export default function APIDebugger() {
     setTestResults("");
 
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       const config = getAPIConfig();
 
       let results = `🔧 API Configuration Debug\n`;
@@ -81,7 +81,7 @@ export default function APIDebugger() {
           text: "Clear",
           style: "destructive",
           onPress: async () => {
-            await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+            await tokenStore.multiRemove(["access_token", "refresh_token"]);
             Alert.alert("Success", "Tokens cleared!");
           },
         },

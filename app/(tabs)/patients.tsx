@@ -1,4 +1,4 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { router, useFocusEffect } from "expo-router";
 import { jwtDecode } from "jwt-decode";
 import moment from "moment";
@@ -126,7 +126,7 @@ export default function PatientsScreen() {
 
   const loadUserData = async () => {
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
         console.log("🔍 PATIENTS DEBUG - Raw JWT role:", decodedToken.role);
@@ -158,7 +158,7 @@ export default function PatientsScreen() {
     console.log("🌐 API_BASE_URL:", API_BASE_URL);
     setLoadingPatients(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         console.log("❌ No access token found");
         return;
@@ -333,7 +333,7 @@ export default function PatientsScreen() {
 
     setSavingPatient(true);
     try {
-      const token = await AsyncStorage.getItem("access_token");
+      const token = await tokenStore.getItem("access_token");
       if (!token) {
         Alert.alert("Error", "No access token found. Please log in again.");
         return;
@@ -416,7 +416,7 @@ export default function PatientsScreen() {
           onPress: async () => {
             setDeletingPatient(true);
             try {
-              const token = await AsyncStorage.getItem("access_token");
+              const token = await tokenStore.getItem("access_token");
               if (!token) {
                 Alert.alert(
                   "Error",

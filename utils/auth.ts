@@ -7,7 +7,7 @@
 // concurrent requests), retry the original request once, and only sign the
 // user out if the refresh itself fails.
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
+import { tokenStore } from "@/utils/tokenStore";
 import { router } from "expo-router";
 import { API_BASE_URL, API_ENDPOINTS } from "../config/api";
 
@@ -17,7 +17,7 @@ let refreshInFlight: Promise<string | null> | null = null;
 type FetchFn = typeof fetch;
 
 async function refreshAccessToken(rawFetch: FetchFn): Promise<string | null> {
-  const refresh = await AsyncStorage.getItem("refresh_token");
+  const refresh = await tokenStore.getItem("refresh_token");
   if (!refresh) return null;
 
   try {
@@ -31,9 +31,9 @@ async function refreshAccessToken(rawFetch: FetchFn): Promise<string | null> {
     const data = await res.json();
     if (!data?.access) return null;
 
-    await AsyncStorage.setItem("access_token", data.access);
+    await tokenStore.setItem("access_token", data.access);
     // Some backends rotate the refresh token too.
-    if (data.refresh) await AsyncStorage.setItem("refresh_token", data.refresh);
+    if (data.refresh) await tokenStore.setItem("refresh_token", data.refresh);
     return data.access as string;
   } catch {
     return null;
@@ -42,7 +42,7 @@ async function refreshAccessToken(rawFetch: FetchFn): Promise<string | null> {
 
 async function endSession() {
   try {
-    await AsyncStorage.multiRemove(["access_token", "refresh_token"]);
+    await tokenStore.multiRemove(["access_token", "refresh_token"]);
   } finally {
     router.replace("/login");
   }
