@@ -94,58 +94,16 @@ export default function BlockedDateModal({
         const doctorsData = await doctorsResponse.json();
         setDoctors(doctorsData || []);
       } else {
-        // If backend is unavailable, provide demo data
-        if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
-          const demoDoctors = [
-            {
-              id: 1,
-              username: "demo_doc1",
-              first_name: "John",
-              last_name: "Smith",
-            },
-            {
-              id: 2,
-              username: "demo_doc2",
-              first_name: "Jane",
-              last_name: "Doe",
-            },
-            {
-              id: 3,
-              username: "demo_doc3",
-              first_name: "Mike",
-              last_name: "Johnson",
-            },
-          ];
-          setDoctors(demoDoctors);
-        } else {
-          setDoctors([]);
-        }
+        setDoctors([]);
       }
     } catch (error) {
       console.error("❌ Network error loading doctors:", error);
 
-      // Provide demo data on network error
-      const demoDoctors = [
-        {
-          id: 1,
-          username: "demo_doc1",
-          first_name: "John",
-          last_name: "Smith",
-        },
-        {
-          id: 2,
-          username: "demo_doc2",
-          first_name: "Jane",
-          last_name: "Doe",
-        },
-        {
-          id: 3,
-          username: "demo_doc3",
-          first_name: "Mike",
-          last_name: "Johnson",
-        },
-      ];
-      setDoctors(demoDoctors);
+      setDoctors([]);
+      Alert.alert(
+        "Network Error",
+        "Could not load the doctor list. Please check your connection and try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -256,26 +214,8 @@ export default function BlockedDateModal({
 
         if (response.status === 404) {
           Alert.alert(
-            "🎭 Demo Mode Success",
-            `${moment(formData.date).format("MMMM D, YYYY")} would be ${
-              blockedDate ? "updated" : "blocked"
-            } in demo mode!\n\nReason: ${formData.reason}`,
-            [
-              {
-                text: "View Calendar",
-                onPress: () => {
-                  onSave();
-                  onClose();
-                  setTimeout(() => {
-                    try {
-                      router.replace("/(tabs)/appointments");
-                    } catch (navError) {
-                      console.log("Navigation error:", navError);
-                    }
-                  }, 100);
-                },
-              },
-            ]
+            "Error",
+            "The blocked-dates service could not be found (404). The date was NOT saved. Please try again later or contact support."
           );
         } else {
           try {
@@ -291,28 +231,9 @@ export default function BlockedDateModal({
       }
     } catch (error) {
       console.error("Error saving blocked date:", error);
-      // Show demo mode success for network errors
       Alert.alert(
-        "🎭 Demo Mode Success",
-        `${moment(formData.date).format("MMMM D, YYYY")} would be ${
-          blockedDate ? "updated" : "blocked"
-        } in demo mode!\n\nReason: ${formData.reason}`,
-        [
-          {
-            text: "View Calendar",
-            onPress: () => {
-              onSave();
-              onClose();
-              setTimeout(() => {
-                try {
-                  router.replace("/(tabs)/appointments");
-                } catch (navError) {
-                  console.log("Navigation error:", navError);
-                }
-              }, 100);
-            },
-          },
-        ]
+        "Network Error",
+        "Could not reach the server. The date was NOT saved. Please check your connection and try again."
       );
     } finally {
       setSaving(false);

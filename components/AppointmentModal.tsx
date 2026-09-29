@@ -193,29 +193,7 @@ export default function AppointmentModal({
           return; // Exit early if token was expired
         }
 
-        // If backend is unavailable, provide demo data
-        if (doctorsResponse.status >= 500 || doctorsResponse.status === 404) {
-          const demoDoctors = [
-            {
-              id: 1,
-              username: "demo_doc1",
-              first_name: "John",
-              last_name: "Smith",
-              email: "john@demo.com",
-            },
-            {
-              id: 2,
-              username: "demo_doc2",
-              first_name: "Jane",
-              last_name: "Doe",
-              email: "jane@demo.com",
-            },
-          ];
-          console.log("🔍 Using demo doctors:", demoDoctors);
-          setDoctors(demoDoctors);
-        } else {
-          setDoctors([]);
-        }
+        setDoctors([]);
       }
 
       // Load patients (only for doctors and admins)
@@ -268,42 +246,7 @@ export default function AppointmentModal({
             return; // Exit early if token was expired
           }
 
-          // If backend is unavailable, provide demo data
-          if (
-            patientsResponse.status >= 500 ||
-            patientsResponse.status === 404
-          ) {
-            const demoPatients = [
-              {
-                id: 1,
-                user_id: 101, // Demo user_id
-                username: "demo_patient1",
-                first_name: "Alice",
-                last_name: "Johnson",
-                email: "alice@demo.com",
-              },
-              {
-                id: 2,
-                user_id: 102, // Demo user_id
-                username: "demo_patient2",
-                first_name: "Bob",
-                last_name: "Smith",
-                email: "bob@demo.com",
-              },
-              {
-                id: 3,
-                user_id: 103, // Demo user_id
-                username: "demo_patient3",
-                first_name: "Carol",
-                last_name: "Davis",
-                email: "carol@demo.com",
-              },
-            ];
-            console.log("🔍 Using demo patients:", demoPatients);
-            setPatients(demoPatients);
-          } else {
-            setPatients([]);
-          }
+          setPatients([]);
         }
       } else {
         console.log("ℹ️ Skipping patient loading - user role is patient");
@@ -354,84 +297,18 @@ export default function AppointmentModal({
           return; // Exit early if token was expired
         }
 
-        // Provide demo clinic events if backend is unavailable
-        const demoClinicEvents = [
-          { id: 1, name: "Consultation", description: "General consultation" },
-          { id: 2, name: "Checkup", description: "Regular health checkup" },
-          { id: 3, name: "Follow-up", description: "Follow-up appointment" },
-          {
-            id: 4,
-            name: "Vaccination",
-            description: "Vaccination appointment",
-          },
-          { id: 5, name: "Lab Results", description: "Lab results review" },
-        ];
-        console.log("🔍 Using demo clinic events:", demoClinicEvents);
-        setClinicEvents(demoClinicEvents);
+        setClinicEvents([]);
       }
     } catch (error) {
       console.error("Error loading users data:", error);
 
-      // Provide demo data on network error
-      const demoDoctors = [
-        {
-          id: 1,
-          username: "demo_doc1",
-          first_name: "John",
-          last_name: "Smith",
-          email: "john@demo.com",
-        },
-        {
-          id: 2,
-          username: "demo_doc2",
-          first_name: "Jane",
-          last_name: "Doe",
-          email: "jane@demo.com",
-        },
-      ];
-
-      const demoPatients = [
-        {
-          id: 1,
-          user_id: 101, // Demo user_id
-          username: "demo_patient1",
-          first_name: "Alice",
-          last_name: "Johnson",
-          email: "alice@demo.com",
-        },
-        {
-          id: 2,
-          user_id: 102, // Demo user_id
-          username: "demo_patient2",
-          first_name: "Bob",
-          last_name: "Smith", // Fixed inconsistent property name
-          email: "bob@demo.com",
-        },
-        {
-          id: 3,
-          user_id: 103, // Demo user_id
-          username: "demo_patient3",
-          first_name: "Carol",
-          last_name: "Davis",
-          email: "carol@demo.com",
-        },
-      ];
-
-      console.log("🔍 Network error - using demo data");
-      setDoctors(demoDoctors);
-      if (currentUser?.role !== "patient") {
-        setPatients(demoPatients);
-      }
-
-      // Set demo clinic events
-      const demoClinicEvents = [
-        { id: 1, name: "Consultation", description: "General consultation" },
-        { id: 2, name: "Checkup", description: "Regular health checkup" },
-        { id: 3, name: "Follow-up", description: "Follow-up appointment" },
-        { id: 4, name: "Vaccination", description: "Vaccination appointment" },
-        { id: 5, name: "Lab Results", description: "Lab results review" },
-      ];
-      setClinicEvents(demoClinicEvents);
+      setDoctors([]);
+      setPatients([]);
+      setClinicEvents([]);
+      Alert.alert(
+        "Network Error",
+        "Could not load doctors, patients or visit types. Please check your connection and try again."
+      );
     } finally {
       setLoading(false);
     }
@@ -812,21 +689,9 @@ export default function AppointmentModal({
       }
     } catch (error) {
       console.error("Error saving appointment:", error);
-      // Show demo mode message when backend is not available
       Alert.alert(
-        "Demo Mode",
-        `Backend not connected. In a real environment, this appointment would be ${
-          appointment ? "updated" : "created"
-        }.`,
-        [
-          {
-            text: "OK",
-            onPress: () => {
-              onSave();
-              onClose();
-            },
-          },
-        ]
+        "Network Error",
+        "Could not reach the server. The appointment was NOT saved. Please check your connection and try again."
       );
     } finally {
       setSaving(false);

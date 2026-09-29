@@ -249,46 +249,11 @@ export default function AppointmentsScreen() {
         setBlockedDates(blockedDateDisplays);
       } else {
         console.error("Failed to load blocked dates:", response.status);
-        // If backend is unavailable, provide demo data
-        if (response.status >= 500 || response.status === 404) {
-          console.log("🎭 Backend unavailable, using demo blocked dates");
-          const demoBlockedDates = [
-            {
-              id: 1,
-              date: moment().add(2, "days").format("YYYY-MM-DD"),
-              reason: "Medical conference",
-              doctor_id: 1,
-            },
-            {
-              id: 2,
-              date: moment().add(7, "days").format("YYYY-MM-DD"),
-              reason: "Personal leave",
-              doctor_id: undefined, // General block
-            },
-          ];
-          setBlockedDates(demoBlockedDates);
-        } else {
-          setBlockedDates([]);
-        }
+        setBlockedDates([]);
       }
     } catch (error) {
-      console.error("Error loading blocked dates:", error); // Provide demo data on network error
-      console.log("🎭 Network error, using demo blocked dates");
-      const demoBlockedDates = [
-        {
-          id: 1,
-          date: moment().add(2, "days").format("YYYY-MM-DD"),
-          reason: "Medical conference",
-          doctor_id: 1,
-        },
-        {
-          id: 2,
-          date: moment().add(7, "days").format("YYYY-MM-DD"),
-          reason: "Personal leave",
-          doctor_id: undefined, // General block
-        },
-      ];
-      setBlockedDates(demoBlockedDates);
+      console.error("Error loading blocked dates:", error);
+      setBlockedDates([]);
     }
   };
 

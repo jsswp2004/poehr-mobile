@@ -37,3 +37,6 @@ yarn-error.*
 *.tsbuildinfo
 
 app-example
+
+# local dev/debug scripts (contain test usernames; never commit)
+dev-scripts/

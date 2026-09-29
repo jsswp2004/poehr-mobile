@@ -6,15 +6,18 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { installAuthFetch } from '@/utils/auth';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
+
+// Refresh expired access tokens transparently for all API calls.
+installAuthFetch();
 
 // PRODUCTION FIX: Disable console logs in production to prevent crashes
 if (!__DEV__) {
   console.log = () => {};
   console.warn = () => {};
-  console.error = () => {};
 }
 
 export default function RootLayout() {
@@ -38,7 +41,6 @@ export default function RootLayout() {
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import axios from "axios";
 import { router } from "expo-router";
-import { jwtDecode } from "jwt-decode";
 import React, { useState } from "react";
 import {
   Alert,
@@ -28,8 +27,6 @@ const LoginScreen = () => {
     // Debug logging
     console.log("🔐 Starting login process...");
     console.log("📍 Login endpoint:", API_ENDPOINTS.LOGIN);
-    console.log("👤 Username:", formData.username);
-    console.log("🔒 Password length:", formData.password.length);
 
     try {
       console.log("📡 Sending login request to:", API_ENDPOINTS.LOGIN);
@@ -43,7 +40,6 @@ const LoginScreen = () => {
 
       if (!access || !refresh) {
         console.log("❌ Missing tokens in response");
-        console.log("📄 Full response:", res.data);
         Alert.alert("Login Error", "Invalid response from server");
         return;
       }
@@ -52,9 +48,6 @@ const LoginScreen = () => {
       await AsyncStorage.setItem("access_token", access);
       await AsyncStorage.setItem("refresh_token", refresh);
 
-      console.log("🔍 Decoding user token...");
-      const user = jwtDecode(access);
-      console.log("👤 Logged in user:", user);
 
       console.log("🚀 Navigating to main app...");
       router.replace("/(tabs)");
@@ -65,8 +58,6 @@ const LoginScreen = () => {
       if (error.response) {
         console.log("📋 Response status:", error.response.status);
         console.log("📋 Response statusText:", error.response.statusText);
-        console.log("📋 Response data:", error.response.data);
-        console.log("📋 Response headers:", error.response.headers);
 
         if (error.response.status === 401) {
           Alert.alert("Login Failed", "Invalid username or password");
@@ -85,7 +76,6 @@ const LoginScreen = () => {
         }
       } else if (error.request) {
         console.log("📋 No response received");
-        console.log("📋 Request details:", error.request);
         Alert.alert(
           "Network Error",
           "Cannot connect to server. Check your internet connection."
@@ -129,9 +119,9 @@ const LoginScreen = () => {
           {loading ? "Logging in..." : "Login"}
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.push("./register")}>
-        <Text>Don&apos;t have an account? Ask your site administrator</Text>
-      </TouchableOpacity>
+      <Text style={styles.helpText}>
+        Don&apos;t have an account? Ask your site administrator.
+      </Text>
     </View>
   );
 };
@@ -142,6 +132,11 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     backgroundColor: "#f5f5f5",
+  },
+  helpText: {
+    textAlign: "center",
+    marginTop: 16,
+    color: "#666",
   },
   title: {
     fontSize: 32,
