@@ -6,7 +6,9 @@ import { tokenStore } from "@/utils/tokenStore";
 const DEV_LOCALHOST_URL = "http://localhost:8000"; // Localhost for emulator testing
 
 // Production URL - Update this with your live backend URL
-const PROD_API_BASE_URL = "https://www.powerhealthcareit.com";
+// The Django API is hosted on Render. www.powerhealthcareit.com is the Vercel
+// website and rejects API POSTs with 405, so do not point the app there.
+const PROD_API_BASE_URL = "https://poehr-scheduling-api.onrender.com";
 
 // Environment detection
 const isDevelopment = __DEV__;
