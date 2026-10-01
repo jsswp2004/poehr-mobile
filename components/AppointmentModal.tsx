@@ -61,6 +61,7 @@ interface Appointment {
   duration_minutes?: number; // Backend returns this
   status: string;
   clinic_event_id?: number;
+  clinic_event?: number; // Backend returns this
   notes?: string;
   description?: string; // Backend returns this
   patient_id?: number; // Keep for backward compatibility
@@ -347,7 +348,8 @@ export default function AppointmentModal({
           appointment_time: appointmentTime,
           duration: appointment.duration || appointment.duration_minutes || 30,
           status: appointment.status || "pending",
-          clinic_event_id: appointment.clinic_event_id || 0,
+          clinic_event_id:
+            appointment.clinic_event_id || appointment.clinic_event || 0,
           notes: appointment.notes || appointment.description || "",
           patient_id: appointment.patient_id || appointment.patient || 0,
           doctor_id: appointment.doctor_id || appointment.provider || 0,
@@ -368,6 +370,23 @@ export default function AppointmentModal({
       }
     }
   }, [visible, appointment, selectedDate, currentUser, loadUsersData]);
+
+  // The appointment stores the patient's USER id (that is what gets saved as
+  // `patient`), but the Patient picker's items use the patient record's own
+  // `id`. When editing, translate one to the other once the patient list has
+  // loaded; otherwise the picker can't find a match and silently shows the
+  // first patient in the list instead of the one on the appointment.
+  useEffect(() => {
+    if (!visible || !appointment || patients.length === 0) return;
+    const userId = appointment.patient;
+    if (!userId) return;
+    const match = patients.find((p) => p.user_id === userId);
+    if (match) {
+      setFormData((prev) =>
+        prev.patient_id === match.id ? prev : { ...prev, patient_id: match.id }
+      );
+    }
+  }, [visible, appointment, patients]);
 
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS, close on Android
@@ -699,7 +718,7 @@ export default function AppointmentModal({
   };
 
   // Generate time slots from 8 AM to 5 PM in 30-minute intervals
-  const timeSlots = [];
+  const timeSlots: string[] = [];
   for (let hour = 8; hour <= 17; hour++) {
     for (let minute = 0; minute < 60; minute += 30) {
       const timeString = `${hour.toString().padStart(2, "0")}:${minute
@@ -707,6 +726,13 @@ export default function AppointmentModal({
         .padStart(2, "0")}`;
       timeSlots.push(timeString);
     }
+  }
+  // An existing appointment may sit outside the 8-5 grid (or off the half
+  // hour). Keep its own time selectable so the picker shows it instead of
+  // jumping to 8:00 AM -- and saving doesn't silently move it.
+  if (formData.appointment_time && !timeSlots.includes(formData.appointment_time)) {
+    timeSlots.push(formData.appointment_time);
+    timeSlots.sort();
   }
 
   return (
@@ -1089,10 +1115,14 @@ export default function AppointmentModal({
                     }}
                     style={styles.picker}
                   >
+                    <Picker.Item label="Scheduled" value="scheduled" />
                     <Picker.Item label="Pending" value="pending" />
                     <Picker.Item label="Confirmed" value="confirmed" />
                     <Picker.Item label="Cancelled" value="cancelled" />
                     <Picker.Item label="Completed" value="completed" />
+                    <Picker.Item label="In Progress" value="in_progress" />
+                    <Picker.Item label="No Show" value="no_show" />
+                    <Picker.Item label="Rescheduled" value="rescheduled" />
                   </Picker>
                 </ThemedView>
               </ThemedView>
