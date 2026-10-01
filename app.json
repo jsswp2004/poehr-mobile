@@ -6,7 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/images/power-logo.png",
     "scheme": "poehrmobile",
-    "userInterfaceStyle": "automatic",
+    "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "description": "POWER Mobile - Advanced Healthcare Management Platform",
     "platforms": [
@@ -17,7 +17,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.powerit.poehrmobile",
-      "buildNumber": "11",
+      "buildNumber": "17",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
@@ -63,7 +63,8 @@
       ],
       "@react-native-community/datetimepicker",
       "expo-font",
-      "expo-asset"
+      "expo-asset",
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

@@ -388,6 +388,30 @@ export default function AppointmentModal({
     }
   }, [visible, appointment, patients]);
 
+  // The backend Appointment has no clinic_event column: the clinic event's
+  // name is saved as the appointment `title`. So when editing, restore the
+  // picker by ID if one is present, otherwise by matching the title to a
+  // clinic event name once the clinic events list has loaded.
+  useEffect(() => {
+    if (!visible || !appointment || clinicEvents.length === 0) return;
+    const savedId = appointment.clinic_event_id || appointment.clinic_event;
+    let match = savedId
+      ? clinicEvents.find((e) => e.id === savedId)
+      : undefined;
+    if (!match && appointment.title) {
+      const title = appointment.title.trim().toLowerCase();
+      match = clinicEvents.find((e) => e.name.trim().toLowerCase() === title);
+    }
+    if (match) {
+      const matchId = match.id;
+      setFormData((prev) =>
+        prev.clinic_event_id === matchId
+          ? prev
+          : { ...prev, clinic_event_id: matchId }
+      );
+    }
+  }, [visible, appointment, clinicEvents]);
+
   const handleDateChange = (event: any, selectedDate?: Date) => {
     setShowDatePicker(Platform.OS === "ios"); // Keep open on iOS, close on Android
     if (selectedDate) {
@@ -1190,17 +1214,17 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     padding: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
   },
   dateInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
   pickerContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     overflow: "hidden",
   },
@@ -1208,7 +1232,7 @@ const styles = StyleSheet.create({
     height: Platform.OS === "ios" ? 150 : 50,
   },
   textInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
@@ -1218,7 +1242,7 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255, 255, 255, 0.2)",
   },
   singleLineTextInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
