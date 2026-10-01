@@ -48,24 +48,10 @@ export default function HomeScreen() {
     }
   }, [user]);
 
-  // Function to get the appropriate logo image based on user organization
-  const getOrganizationLogo = () => {
-    if (!user?.organization) {
-      return require("@/assets/images/power-logo.png");
-    }
-
-    const org = user.organization.toLowerCase();
-
-    // Map organizations to their respective logos
-    if (org.includes("hospital") || org.includes("medical center")) {
-      return require("@/assets/images/icon.png");
-    } else if (org.includes("clinic") || org.includes("health")) {
-      return require("@/assets/images/adaptive-icon.png");
-    } else {
-      // Default to POWER IT logo
-      return require("@/assets/images/power-logo.png");
-    }
-  };
+  // Always show the POWER logo. (Name-based logo matching used to send
+  // "clinic"/"health" organizations to adaptive-icon.png, which is just the
+  // Expo template placeholder.)
+  const getOrganizationLogo = () => require("@/assets/images/power-logo.png");
 
   const loadUserData = async () => {
     try {
