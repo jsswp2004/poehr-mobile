@@ -52,7 +52,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ showBackButton = false }) 
       <View style={styles.leftSection}>
         {showBackButton ? (
           <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-            <IconSymbol name="chevron.left" size={24} color="#2c3e50" />
+            <IconSymbol name="chevron.left" size={24} color="#222" />
           </TouchableOpacity>
         ) : (
           <View style={styles.logoContainer}>
@@ -71,7 +71,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({ showBackButton = false }) 
 
       <View style={styles.rightSection}>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
-          <IconSymbol name="rectangle.portrait.and.arrow.right" size={24} color="#e74c3c" />
+          <IconSymbol name="rectangle.portrait.and.arrow.right" size={24} color="#c62828" />
         </TouchableOpacity>
       </View>
     </View>
@@ -87,15 +87,7 @@ const styles = StyleSheet.create({
     paddingVertical: 24, // Doubled from 12 to 24
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e1e8ed',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 3,
+    borderBottomColor: '#ddd',
   },
   leftSection: {
     flex: 1,
@@ -123,7 +115,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 22, // Increased from 18 to 22
     fontWeight: 'bold',
-    color: '#2c3e50',
+    color: '#222',
     textAlign: 'center',
   },
   backButton: {

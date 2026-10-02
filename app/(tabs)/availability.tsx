@@ -373,7 +373,7 @@ export default function AvailabilityScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" color="#3498db" />
+        <ActivityIndicator size="large" color="#1976d2" />
         <ThemedText>Loading availability...</ThemedText>
       </ThemedView>
     );
@@ -821,7 +821,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   refreshButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 5,
@@ -836,7 +836,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     padding: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   sectionTitle: {
     fontWeight: "bold",
@@ -859,14 +859,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     fontSize: 16,
     minHeight: 50,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   pickerContainer: {
     borderWidth: 1,
@@ -876,14 +868,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     minHeight: 50,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   pickerWrapper: {
     borderWidth: 1,
@@ -892,14 +876,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     minHeight: 50,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
     overflow: "hidden",
   },
   pickerTouchable: {
@@ -925,14 +901,6 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
     minHeight: 50,
     justifyContent: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   datePickerText: {
     fontSize: 16,
@@ -947,7 +915,7 @@ const styles = StyleSheet.create({
     width: 20,
     height: 20,
     borderWidth: 2,
-    borderColor: "#3498db",
+    borderColor: "#1976d2",
     borderRadius: 4,
     marginRight: 10,
     justifyContent: "center",
@@ -955,7 +923,7 @@ const styles = StyleSheet.create({
     backgroundColor: "white",
   },
   checkboxChecked: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
   },
   checkmark: {
     color: "white",
@@ -973,7 +941,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   saveButton: {
-    backgroundColor: "#2ecc71",
+    backgroundColor: "#2e7d32",
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
@@ -986,7 +954,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 30,
     paddingVertical: 15,
     borderRadius: 8,
@@ -1002,7 +970,7 @@ const styles = StyleSheet.create({
     marginBottom: 30,
     padding: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   scheduleSection: {
     marginBottom: 20,
@@ -1011,7 +979,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     marginBottom: 10,
     fontSize: 16,
-    color: "#2c3e50",
+    color: "#222",
   },
   scheduleItem: {
     flexDirection: "row",
@@ -1020,9 +988,9 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 8,
     borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.8)",
+    backgroundColor: "#fff",
     borderLeftWidth: 4,
-    borderLeftColor: "#3498db",
+    borderLeftColor: "#1976d2",
   },
   scheduleTime: {
     flex: 1,
@@ -1034,13 +1002,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
   },
   deleteButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
@@ -1073,14 +1041,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
   },
   dropdownText: {
     fontSize: 16,
@@ -1105,14 +1065,6 @@ const styles = StyleSheet.create({
     margin: 20,
     maxHeight: "70%",
     minWidth: "80%",
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
-    elevation: 5,
   },
   modalTitle: {
     fontSize: 18,
@@ -1135,7 +1087,7 @@ const styles = StyleSheet.create({
     color: "#333",
   },
   modalCloseButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     padding: 15,
     borderBottomLeftRadius: 10,
     borderBottomRightRadius: 10,

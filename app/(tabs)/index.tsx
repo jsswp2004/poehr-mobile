@@ -191,7 +191,7 @@ export default function HomeScreen() {
   if (loading) {
     return (
       <ParallaxScrollView
-        headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+        headerBackgroundColor={{ light: "#e3f2fd", dark: "#e3f2fd" }}
         headerImage={
           <Image
             source={require("@/assets/images/power-logo.png")}
@@ -208,7 +208,7 @@ export default function HomeScreen() {
 
   return (
     <ParallaxScrollView
-      headerBackgroundColor={{ light: "#A1CEDC", dark: "#1D3D47" }}
+      headerBackgroundColor={{ light: "#e3f2fd", dark: "#e3f2fd" }}
       headerImage={
         <Image source={getOrganizationLogo()} style={styles.organizationLogo} />
       }
@@ -386,7 +386,7 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   stepContainer: {
     gap: 8,
@@ -396,7 +396,7 @@ const styles = StyleSheet.create({
     padding: 15,
     marginVertical: 5,
     borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   appointmentItem: {
     flexDirection: "row",
@@ -405,9 +405,9 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 3,
     borderRadius: 6,
-    backgroundColor: "rgba(46, 204, 113, 0.1)",
+    backgroundColor: "#e8f5e9",
     borderLeftWidth: 3,
-    borderLeftColor: "#2ecc71",
+    borderLeftColor: "#2e7d32",
   },
   appointmentTime: {
     fontWeight: "bold",
@@ -416,10 +416,10 @@ const styles = StyleSheet.create({
   appointmentStatus: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#3498db",
+    color: "#1976d2",
   },
   viewAllButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 5,
@@ -449,7 +449,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   exportButton: {
-    backgroundColor: "#2ecc71",
+    backgroundColor: "#2e7d32",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
@@ -463,7 +463,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   searchInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#fff",
     padding: 12,
     borderRadius: 8,
     marginBottom: 10,
@@ -475,13 +475,13 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   filterButton: {
-    backgroundColor: "rgba(255, 255, 255, 0.2)",
+    backgroundColor: "#eee",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
   },
   filterButtonActive: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
   },
   filterButtonText: {
     fontSize: 12,
@@ -497,9 +497,9 @@ const styles = StyleSheet.create({
     padding: 15,
     marginVertical: 4,
     borderRadius: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderLeftWidth: 3,
-    borderLeftColor: "#3498db",
+    borderLeftColor: "#1976d2",
   },
   patientInfo: {
     flex: 1,
@@ -524,7 +524,7 @@ const styles = StyleSheet.create({
   patientGender: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#9b59b6",
+    color: "#6a1b9a",
     marginBottom: 2,
   },
   patientId: {

@@ -542,7 +542,7 @@ export default function PatientsScreen() {
             refreshing={loadingPatients}
             onRefresh={loadPatients}
             title="Pull to refresh patients"
-            tintColor="#3498db"
+            tintColor="#1976d2"
           />
         }
       >
@@ -1028,11 +1028,6 @@ const styles = StyleSheet.create({
   header: {
     padding: 20,
     backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
     minHeight: 70,
   },
   headerTitleContainer: {
@@ -1054,7 +1049,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   exportButton: {
-    backgroundColor: "#2ecc71",
+    backgroundColor: "#2e7d32",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -1068,7 +1063,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   refreshButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -1088,27 +1083,27 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   searchInput: {
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f5f5f5",
     padding: 12,
     borderRadius: 8,
     marginBottom: 15,
     fontSize: 16,
     color: "#333",
     borderWidth: 1,
-    borderColor: "#e9ecef",
+    borderColor: "#ddd",
   },
   filterContainer: {
     flexDirection: "row",
     gap: 10,
   },
   filterButton: {
-    backgroundColor: "#e9ecef",
+    backgroundColor: "#ddd",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
   },
   filterButtonActive: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
   },
   filterButtonText: {
     fontSize: 12,
@@ -1127,7 +1122,7 @@ const styles = StyleSheet.create({
   },
   retryButton: {
     marginTop: 10,
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 5,
@@ -1156,13 +1151,8 @@ const styles = StyleSheet.create({
     marginHorizontal: 10,
     borderRadius: 12,
     backgroundColor: "#fff",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
     borderLeftWidth: 4,
-    borderLeftColor: "#3498db",
+    borderLeftColor: "#1976d2",
   },
   patientInfo: {
     flex: 1,
@@ -1172,21 +1162,21 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 4,
-    color: "#2c3e50",
+    color: "#222",
   },
   patientEmail: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: "#666",
     marginBottom: 2,
   },
   patientPhone: {
     fontSize: 14,
-    color: "#7f8c8d",
+    color: "#666",
     marginBottom: 2,
   },
   patientAge: {
     fontSize: 12,
-    color: "#95a5a6",
+    color: "#888",
   },
   patientMeta: {
     alignItems: "flex-end",
@@ -1194,21 +1184,21 @@ const styles = StyleSheet.create({
   patientGender: {
     fontSize: 12,
     fontWeight: "bold",
-    color: "#9b59b6",
+    color: "#6a1b9a",
     marginBottom: 4,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f5f5f5",
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
   },
   patientId: {
     fontSize: 10,
-    color: "#bdc3c7",
+    color: "#ccc",
     marginBottom: 2,
   },
   patientRegistered: {
     fontSize: 10,
-    color: "#bdc3c7",
+    color: "#ccc",
   },
   emptyContainer: {
     flex: 1,
@@ -1218,13 +1208,13 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: 16,
-    color: "#7f8c8d",
+    color: "#666",
     textAlign: "center",
     marginBottom: 10,
   },
   emptySubtext: {
     fontSize: 14,
-    color: "#95a5a6",
+    color: "#888",
     textAlign: "center",
     fontStyle: "italic",
   },
@@ -1236,12 +1226,12 @@ const styles = StyleSheet.create({
   },
   accessDeniedText: {
     fontSize: 16,
-    color: "#7f8c8d",
+    color: "#666",
     textAlign: "center",
     marginVertical: 20,
   },
   backButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 20,
     paddingVertical: 10,
     borderRadius: 8,
@@ -1262,7 +1252,7 @@ const styles = StyleSheet.create({
     padding: 20,
     borderBottomWidth: 1,
     borderBottomColor: "#eee",
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f5f5f5",
     minHeight: 70,
   },
   modalTitleContainer: {
@@ -1289,7 +1279,7 @@ const styles = StyleSheet.create({
   },
   detailSection: {
     marginBottom: 25,
-    backgroundColor: "#f8f9fa",
+    backgroundColor: "#f5f5f5",
     padding: 15,
     borderRadius: 8,
   },
@@ -1324,7 +1314,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   editButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -1335,7 +1325,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   deleteButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,
@@ -1357,7 +1347,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   cancelButton: {
-    backgroundColor: "#95a5a6",
+    backgroundColor: "#888",
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 6,

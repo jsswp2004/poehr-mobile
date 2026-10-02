@@ -1185,14 +1185,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: "#ddd",
   },
   cancelButton: {
-    color: "#e74c3c",
+    color: "#c62828",
     fontSize: 16,
   },
   saveButton: {
-    color: "#3498db",
+    color: "#1976d2",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -1221,7 +1221,7 @@ const styles = StyleSheet.create({
     backgroundColor: "transparent",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#ccc",
   },
   pickerContainer: {
     backgroundColor: "transparent",
@@ -1239,7 +1239,7 @@ const styles = StyleSheet.create({
     color: "#333",
     minHeight: 100,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#ccc",
   },
   singleLineTextInput: {
     backgroundColor: "transparent",
@@ -1248,6 +1248,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#ccc",
   },
 });

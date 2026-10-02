@@ -271,7 +271,7 @@ export default function AppointmentsScreen() {
     if (selectedDate) {
       marked[selectedDate] = {
         selected: true,
-        selectedColor: "#3498db",
+        selectedColor: "#1976d2",
       };
     }
 
@@ -292,12 +292,12 @@ export default function AppointmentsScreen() {
             marked[date] = {
               ...marked[date],
               marked: true,
-              dotColor: "#2ecc71",
+              dotColor: "#2e7d32",
             };
           } else {
             marked[date] = {
               marked: true,
-              dotColor: "#2ecc71",
+              dotColor: "#2e7d32",
             };
           }
         }
@@ -312,12 +312,12 @@ export default function AppointmentsScreen() {
           marked[date] = {
             ...marked[date],
             marked: true,
-            dotColor: "#e74c3c",
+            dotColor: "#c62828",
           };
         } else {
           marked[date] = {
             marked: true,
-            dotColor: "#e74c3c",
+            dotColor: "#c62828",
           };
         }
       }
@@ -516,7 +516,7 @@ export default function AppointmentsScreen() {
   if (loading) {
     return (
       <ThemedView style={styles.container}>
-        <ActivityIndicator size="large" color="#3498db" />
+        <ActivityIndicator size="large" color="#1976d2" />
         <ThemedText>Loading appointments...</ThemedText>
       </ThemedView>
     );
@@ -551,17 +551,17 @@ export default function AppointmentsScreen() {
             backgroundColor: "transparent",
             calendarBackground: "transparent",
             textSectionTitleColor: "#b6c1cd",
-            selectedDayBackgroundColor: "#3498db",
+            selectedDayBackgroundColor: "#1976d2",
             selectedDayTextColor: "#ffffff",
-            todayTextColor: "#3498db",
+            todayTextColor: "#1976d2",
             dayTextColor: "#2d4150",
-            textDisabledColor: "#d9e1e8",
+            textDisabledColor: "#ddd",
             dotColor: "#00adf5",
             selectedDotColor: "#ffffff",
-            arrowColor: "#3498db",
-            disabledArrowColor: "#d9e1e8",
+            arrowColor: "#1976d2",
+            disabledArrowColor: "#ddd",
             monthTextColor: "#2d4150",
-            indicatorColor: "#3498db",
+            indicatorColor: "#1976d2",
             textDayFontWeight: "300",
             textMonthFontWeight: "bold",
             textDayHeaderFontWeight: "300",
@@ -576,13 +576,13 @@ export default function AppointmentsScreen() {
         <ThemedText type="subtitle">Legend</ThemedText>
         <ThemedView style={styles.legendItem}>
           <ThemedView
-            style={[styles.legendDot, { backgroundColor: "#2ecc71" }]}
+            style={[styles.legendDot, { backgroundColor: "#2e7d32" }]}
           />
           <ThemedText>Appointments</ThemedText>
         </ThemedView>
         <ThemedView style={styles.legendItem}>
           <ThemedView
-            style={[styles.legendDot, { backgroundColor: "#e74c3c" }]}
+            style={[styles.legendDot, { backgroundColor: "#c62828" }]}
           />
           <ThemedText>Blocked Dates</ThemedText>
         </ThemedView>
@@ -842,13 +842,13 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#2c3e50",
+    color: "#222",
     textAlign: "left",
     flexShrink: 1,
     flexWrap: "wrap",
   },
   refreshButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 5,
@@ -861,13 +861,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     borderRadius: 10,
     padding: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   legendContainer: {
     marginBottom: 20,
     padding: 15,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
   },
   legendItem: {
     flexDirection: "row",
@@ -890,9 +890,9 @@ const styles = StyleSheet.create({
     padding: 10,
     marginTop: 5,
     borderRadius: 5,
-    backgroundColor: "rgba(231, 76, 60, 0.1)",
+    backgroundColor: "#ffebee",
     borderLeftWidth: 4,
-    borderLeftColor: "#e74c3c",
+    borderLeftColor: "#c62828",
   },
   blockedItemHeader: {
     flexDirection: "row",
@@ -917,7 +917,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   editBlockedButton: {
-    backgroundColor: "#f39c12",
+    backgroundColor: "#ef6c00",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -928,7 +928,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   deleteBlockedButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -955,9 +955,9 @@ const styles = StyleSheet.create({
     padding: 15,
     marginBottom: 10,
     borderRadius: 10,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderLeftWidth: 4,
-    borderLeftColor: "#2ecc71",
+    borderLeftColor: "#2e7d32",
   },
   appointmentHeader: {
     flexDirection: "row",
@@ -977,15 +977,15 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   statusConfirmed: {
-    backgroundColor: "#2ecc71",
+    backgroundColor: "#2e7d32",
     color: "white",
   },
   statusPending: {
-    backgroundColor: "#f39c12",
+    backgroundColor: "#ef6c00",
     color: "white",
   },
   statusCancelled: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     color: "white",
   },
   appointmentName: {
@@ -996,7 +996,7 @@ const styles = StyleSheet.create({
   appointmentEvent: {
     fontSize: 14,
     fontWeight: "500",
-    color: "#3498db",
+    color: "#1976d2",
     marginBottom: 5,
   },
   appointmentDuration: {
@@ -1017,7 +1017,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   editButton: {
-    backgroundColor: "#3498db",
+    backgroundColor: "#1976d2",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
@@ -1028,7 +1028,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   deleteButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
@@ -1051,7 +1051,7 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   createButton: {
-    backgroundColor: "#2ecc71",
+    backgroundColor: "#2e7d32",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 8,
@@ -1065,7 +1065,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   blockButton: {
-    backgroundColor: "#e74c3c",
+    backgroundColor: "#c62828",
     paddingHorizontal: 20,
     paddingVertical: 15,
     borderRadius: 8,

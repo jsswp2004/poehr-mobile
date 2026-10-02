@@ -446,14 +446,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: "#ddd",
   },
   cancelButton: {
-    color: "#e74c3c",
+    color: "#c62828",
     fontSize: 16,
   },
   saveButton: {
-    color: "#3498db",
+    color: "#1976d2",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -475,21 +475,21 @@ const styles = StyleSheet.create({
   dateText: {
     fontSize: 16,
     padding: 12,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
   },
   dateInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.2)",
+    borderColor: "#ccc",
   },
   pickerContainer: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#fff",
     borderRadius: 8,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#007AFF",
+    borderColor: "#1976d2",
     minHeight: 60,
   },
   picker: {
@@ -515,7 +515,7 @@ const styles = StyleSheet.create({
   },
   dropdownArrow: {
     fontSize: 16,
-    color: "#007AFF",
+    color: "#1976d2",
     marginLeft: 8,
   },
   dropdownOptions: {
@@ -532,7 +532,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#eee",
   },
   selectedDropdownOption: {
-    backgroundColor: "#007AFF",
+    backgroundColor: "#1976d2",
   },
   dropdownOptionText: {
     fontSize: 16,
@@ -555,14 +555,14 @@ const styles = StyleSheet.create({
   reasonButton: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
+    backgroundColor: "transparent",
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "transparent",
   },
   selectedReasonButton: {
-    backgroundColor: "#3498db",
-    borderColor: "#3498db",
+    backgroundColor: "#1976d2",
+    borderColor: "#1976d2",
   },
   reasonButtonText: {
     fontSize: 14,
@@ -572,7 +572,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   textInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "#fff",
     borderRadius: 8,
     padding: 12,
     fontSize: 16,

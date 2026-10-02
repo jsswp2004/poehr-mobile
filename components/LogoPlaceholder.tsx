@@ -15,7 +15,7 @@ export const LogoPlaceholder: React.FC<LogoPlaceholderProps> = ({
 
     if (org.includes("hospital") || org.includes("medical center")) {
       return {
-        backgroundColor: "#e74c3c",
+        backgroundColor: "#c62828",
         icon: "🏥",
         text: organization,
       };
@@ -27,7 +27,7 @@ export const LogoPlaceholder: React.FC<LogoPlaceholderProps> = ({
       };
     } else {
       return {
-        backgroundColor: "#3498db",
+        backgroundColor: "#1976d2",
         icon: "⚡",
         text: "POWER IT",
       };
@@ -63,14 +63,6 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     padding: 10,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
   },
   icon: {
     color: "white",
