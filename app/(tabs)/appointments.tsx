@@ -114,14 +114,9 @@ export default function AppointmentsScreen() {
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) {
-        console.log("❌ No token found for loading appointments");
         return;
       }
 
-      console.log(
-        "🔍 Loading appointments from:",
-        `${API_BASE_URL}/api/appointments/`
-      );
       const response = await fetch(`${API_BASE_URL}/api/appointments/`, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -129,13 +124,9 @@ export default function AppointmentsScreen() {
         },
       });
 
-      console.log("🔍 Appointments response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("🔍 Appointments data received:", data);
-        console.log("🔍 Number of appointments:", data.length || 0);
-        console.log("🔍 First appointment sample:", data[0]);
         setAppointments(data);
       } else {
         const errorText = await response.text();
@@ -153,15 +144,10 @@ export default function AppointmentsScreen() {
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) {
-        console.log("❌ No auth token found for loading doctors");
         setDoctors([]);
         return;
       }
 
-      console.log(
-        "🔍 Loading doctors from:",
-        `${API_BASE_URL}/api/users/doctors/`
-      );
 
       const response = await fetch(`${API_BASE_URL}/api/users/doctors/`, {
         headers: {
@@ -170,17 +156,9 @@ export default function AppointmentsScreen() {
         },
       });
 
-      console.log("🔍 Doctors response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("🔍 Doctors loaded:", data?.length || 0, "items");
-        console.log(
-          "🔍 Doctor names:",
-          data?.map(
-            (d: Doctor) => `${d.first_name} ${d.last_name} (ID: ${d.id})`
-          )
-        );
         setDoctors(data || []);
       } else {
         console.error("Failed to load doctors:", response.status);
@@ -196,15 +174,10 @@ export default function AppointmentsScreen() {
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) {
-        console.log("❌ No auth token found for loading blocked dates");
         setBlockedDates([]);
         return;
       }
 
-      console.log(
-        "🔍 Loading blocked dates from:",
-        `${API_BASE_URL}/api/availability/?is_blocked=true`
-      );
 
       const response = await fetch(
         `${API_BASE_URL}/api/availability/?is_blocked=true`,
@@ -216,15 +189,9 @@ export default function AppointmentsScreen() {
         }
       );
 
-      console.log("🔍 Blocked dates response status:", response.status);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("🔍 Blocked dates loaded:", data?.length || 0, "items");
-        console.log(
-          "🔍 Raw blocked dates data:",
-          JSON.stringify(data, null, 2)
-        );
 
         // Convert availability data to BlockedDateDisplay format
         const blockedDateDisplays: BlockedDateDisplay[] =
@@ -235,7 +202,6 @@ export default function AppointmentsScreen() {
             doctor_id: item.doctor,
           })) || [];
 
-        console.log("🔍 Converted blocked dates:", blockedDateDisplays);
         setBlockedDates(blockedDateDisplays);
       } else {
         console.error("Failed to load blocked dates:", response.status);
@@ -316,8 +282,6 @@ export default function AppointmentsScreen() {
     return marked;
   };
   const getAppointmentsForDate = (date: string) => {
-    console.log("🔍 Getting appointments for date:", date);
-    console.log("🔍 Total appointments available:", appointments?.length || 0);
 
     if (!date || !appointments) return [];
 
@@ -331,30 +295,19 @@ export default function AppointmentsScreen() {
         appointmentDate = moment(appointment.appointment_datetime).format(
           "YYYY-MM-DD"
         );
-        console.log(
-          `🔍 Appointment ${appointment.id}: datetime=${appointment.appointment_datetime}, extracted date=${appointmentDate}`
-        );
       } else if (appointment.appointment_date) {
         // Use legacy appointment_date field
         appointmentDate = moment(appointment.appointment_date).format(
           "YYYY-MM-DD"
         );
-        console.log(
-          `🔍 Appointment ${appointment.id}: legacy date=${appointment.appointment_date}, formatted=${appointmentDate}`
-        );
       } else {
-        console.log(`🔍 Appointment ${appointment.id}: no date field found`);
         return false;
       }
 
       const matches = appointmentDate === date;
-      console.log(
-        `🔍 Appointment ${appointment.id}: ${appointmentDate} === ${date} ? ${matches}`
-      );
       return matches;
     });
 
-    console.log("🔍 Filtered appointments for date:", filtered.length);
     return filtered;
   };
 

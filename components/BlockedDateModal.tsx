@@ -202,7 +202,6 @@ export default function BlockedDateModal({
                   try {
                     router.replace("/(tabs)/appointments");
                   } catch (navError) {
-                    console.log("Navigation error:", navError);
                   }
                 }, 100);
               },
@@ -248,7 +247,6 @@ export default function BlockedDateModal({
         ...prev,
         date: formattedDate,
       }));
-      console.log("📅 Date changed to:", formattedDate);
     }
   };
 

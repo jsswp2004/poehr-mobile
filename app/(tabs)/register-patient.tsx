@@ -112,7 +112,6 @@ export default function RegisterPatientScreen() {
   };
 
   const handleSubmit = async () => {
-    console.log("🚀 Starting patient registration...");
     if (!validateForm()) return;
 
     setLoading(true);
@@ -129,7 +128,6 @@ export default function RegisterPatientScreen() {
         role: "patient",
       };
 
-      console.log("📝 Registering patient with data:", registrationData);
 
       const response = await fetch(`${API_BASE_URL}/api/users/register/`, {
         method: "POST",
@@ -143,7 +141,6 @@ export default function RegisterPatientScreen() {
       const responseData = await response.json();
 
       if (response.ok) {
-        console.log("✅ Patient registered successfully:", responseData);
 
         // Reset form
         setFormData({

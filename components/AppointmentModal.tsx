@@ -98,7 +98,6 @@ export default function AppointmentModal({
   const handleTokenExpiration = useCallback(
     async (response: Response, errorData: any) => {
       if (response.status === 401 && errorData.code === "token_not_valid") {
-        console.log("🔐 Token expired during data loading, clearing storage");
         await tokenStore.removeItem("access_token");
         await tokenStore.removeItem("refresh_token");
         Alert.alert(
@@ -137,7 +136,6 @@ export default function AppointmentModal({
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) {
-        console.log("❌ No token found, user needs to log in");
         Alert.alert(
           "Authentication Required",
           "Please log in to access this feature.",
@@ -154,11 +152,6 @@ export default function AppointmentModal({
       }
 
       // Load doctors
-      console.log("🔍 Loading doctors - current user role:", currentUser?.role);
-      console.log(
-        "🔍 Making request to:",
-        `${API_BASE_URL}/api/users/doctors/`
-      );
 
       const doctorsResponse = await fetch(
         `${API_BASE_URL}/api/users/doctors/`,
@@ -170,17 +163,12 @@ export default function AppointmentModal({
         }
       );
 
-      console.log("🔍 Doctors response status:", doctorsResponse.status);
 
       if (doctorsResponse.ok) {
         const doctorsData = await doctorsResponse.json();
-        console.log("🔍 Doctors data received:", doctorsData);
-        console.log("🔍 Number of doctors:", doctorsData?.length || 0);
         setDoctors(doctorsData || []);
       } else {
         const errorText = await doctorsResponse.text();
-        console.log("❌ Failed to load doctors:", doctorsResponse.status);
-        console.log("❌ Error response:", errorText);
 
         // Check for token expiration
         let errorData;
@@ -199,15 +187,6 @@ export default function AppointmentModal({
 
       // Load patients (only for doctors and admins)
       if (currentUser?.role !== "patient") {
-        console.log(
-          "🔍 Loading patients - current user role:",
-          currentUser?.role
-        );
-        console.log(
-          "🔍 Making request to:",
-          `${API_BASE_URL}/api/users/patients/`
-        );
-        console.log("🔍 Using token:", token ? "Token present" : "No token");
 
         const patientsResponse = await fetch(
           `${API_BASE_URL}/api/users/patients/`,
@@ -219,21 +198,15 @@ export default function AppointmentModal({
           }
         );
 
-        console.log("🔍 Patients response status:", patientsResponse.status);
 
         if (patientsResponse.ok) {
           const patientsData = await patientsResponse.json();
-          console.log("🔍 Patients data received:", patientsData);
 
           // Handle paginated response - extract results array
           const patientsArray = patientsData.results || patientsData || [];
-          console.log("🔍 Number of patients:", patientsArray.length);
-          console.log("🔍 Patients array:", patientsArray);
           setPatients(patientsArray);
         } else {
           const errorText = await patientsResponse.text();
-          console.log("❌ Failed to load patients:", patientsResponse.status);
-          console.log("❌ Error response:", errorText);
 
           // Check for token expiration
           let errorData;
@@ -250,11 +223,9 @@ export default function AppointmentModal({
           setPatients([]);
         }
       } else {
-        console.log("ℹ️ Skipping patient loading - user role is patient");
       }
 
       // Load clinic events
-      console.log("🔍 Loading clinic events");
       const clinicEventsResponse = await fetch(
         `${API_BASE_URL}/api/clinic-events/`,
         {
@@ -265,26 +236,15 @@ export default function AppointmentModal({
         }
       );
 
-      console.log(
-        "🔍 Clinic events response status:",
-        clinicEventsResponse.status
-      );
 
       if (clinicEventsResponse.ok) {
         const clinicEventsData = await clinicEventsResponse.json();
-        console.log("🔍 Clinic events data received:", clinicEventsData);
 
         // Handle paginated response if needed
         const eventsArray = clinicEventsData.results || clinicEventsData || [];
-        console.log("🔍 Number of clinic events:", eventsArray.length);
         setClinicEvents(eventsArray);
       } else {
         const errorText = await clinicEventsResponse.text();
-        console.log(
-          "❌ Failed to load clinic events:",
-          clinicEventsResponse.status
-        );
-        console.log("❌ Error response:", errorText);
 
         // Check for token expiration
         let errorData;
@@ -317,13 +277,10 @@ export default function AppointmentModal({
 
   useEffect(() => {
     if (visible) {
-      console.log("🔍 AppointmentModal opened, loading users data...");
-      console.log("🔍 Current user:", currentUser);
       loadUsersData();
 
       if (appointment) {
         // Editing existing appointment
-        console.log("🔍 Editing existing appointment:", appointment);
 
         let appointmentDate, appointmentTime;
 
@@ -356,7 +313,6 @@ export default function AppointmentModal({
         });
       } else {
         // Creating new appointment
-        console.log("🔍 Creating new appointment");
         setFormData({
           appointment_date: selectedDate || moment().format("YYYY-MM-DD"),
           appointment_time: "09:00",
@@ -420,20 +376,13 @@ export default function AppointmentModal({
         ...prev,
         appointment_date: formattedDate,
       }));
-      console.log("📅 Date changed to:", formattedDate);
     }
   };
 
   const handleSave = async () => {
-    console.log("💾 handleSave called");
-    console.log("💾 Current formData:", formData);
-    console.log("💾 Patients array:", patients);
-    console.log("💾 Doctors array:", doctors);
-    console.log("💾 Current user:", currentUser);
 
     // Check if we have patients and doctors available
     if (patients.length === 0 || doctors.length === 0) {
-      console.log("❌ Missing patients or doctors data");
       Alert.alert(
         "Database Status",
         `Current database status:\n\n${
@@ -455,10 +404,6 @@ export default function AppointmentModal({
       !formData.doctor_id ||
       !formData.clinic_event_id
     ) {
-      console.log("❌ Missing required fields");
-      console.log("❌ patient_id:", formData.patient_id);
-      console.log("❌ doctor_id:", formData.doctor_id);
-      console.log("❌ clinic_event_id:", formData.clinic_event_id);
       Alert.alert("Error", "Please select patient, doctor, and clinic event");
       return;
     }
@@ -470,13 +415,8 @@ export default function AppointmentModal({
       (e) => e.id === formData.clinic_event_id
     );
 
-    console.log("🔍 Validation check:");
-    console.log("  - Selected patient:", selectedPatient);
-    console.log("  - Selected doctor:", selectedDoctor);
-    console.log("  - Selected clinic event:", selectedClinicEvent);
 
     if (!selectedPatient) {
-      console.log("❌ Invalid patient selection");
       Alert.alert(
         "Error",
         `Invalid patient selection (ID: ${formData.patient_id}). Please select a valid patient.`
@@ -485,7 +425,6 @@ export default function AppointmentModal({
     }
 
     if (!selectedDoctor) {
-      console.log("❌ Invalid doctor selection");
       Alert.alert(
         "Error",
         `Invalid doctor selection (ID: ${formData.doctor_id}). Please select a valid doctor.`
@@ -494,7 +433,6 @@ export default function AppointmentModal({
     }
 
     if (!selectedClinicEvent) {
-      console.log("❌ Invalid clinic event selection");
       Alert.alert(
         "Error",
         `Invalid clinic event selection (ID: ${formData.clinic_event_id}). Please select a valid clinic event.`
@@ -502,7 +440,6 @@ export default function AppointmentModal({
       return;
     }
 
-    console.log("✅ All validation passed, proceeding with save");
 
     // Show confirmation dialog with selected details
     const patientName = `${selectedPatient.first_name} ${selectedPatient.last_name}`;
@@ -510,13 +447,6 @@ export default function AppointmentModal({
     const clinicEventName = selectedClinicEvent.name;
     const appointmentTime = `${formData.appointment_date} at ${formData.appointment_time}`;
 
-    console.log("🔒 === PRE-SAVE CONFIRMATION DIALOG ===");
-    console.log(
-      `🔒 About to show confirmation for: ${patientName} (ID: ${formData.patient_id})`
-    );
-    console.log(`🔒 Doctor: ${doctorName} (ID: ${formData.doctor_id})`);
-    console.log(`🔒 Current formData.patient_id: ${formData.patient_id}`);
-    console.log("🔒 =====================================");
 
     Alert.alert(
       "Confirm Appointment",
@@ -534,7 +464,6 @@ export default function AppointmentModal({
         {
           text: "Save",
           onPress: async () => {
-            console.log("✅ User confirmed, saving appointment");
             await performSave();
           },
         },
@@ -560,10 +489,6 @@ export default function AppointmentModal({
       );
 
       if (!finalPatient || !finalDoctor || !finalClinicEvent) {
-        console.log("❌ Final validation failed");
-        console.log("  - Final patient:", finalPatient);
-        console.log("  - Final doctor:", finalDoctor);
-        console.log("  - Final clinic event:", finalClinicEvent);
         Alert.alert("Error", "Invalid selection detected. Please try again.");
         setSaving(false);
         return;
@@ -590,26 +515,8 @@ export default function AppointmentModal({
         notes: formData.notes || "",
       };
 
-      console.log("💾 Final appointment data to save:", appointmentData);
-      console.log("💾 Patient details:", finalPatient);
-      console.log("💾 Doctor details:", finalDoctor);
-      console.log("💾 Clinic event details:", finalClinicEvent);
 
       // ENHANCED DEBUG: Clear confirmation of what's being saved
-      console.log("🎯 === APPOINTMENT SAVE CONFIRMATION ===");
-      console.log(
-        `🎯 Patient being saved: ${finalPatient.first_name} ${finalPatient.last_name} (Patient ID: ${formData.patient_id}, User ID: ${finalPatient.user_id})`
-      );
-      console.log(
-        `🎯 Doctor being saved: ${finalDoctor.first_name} ${finalDoctor.last_name} (ID: ${formData.doctor_id})`
-      );
-      console.log(
-        `🎯 Clinic event being saved: ${finalClinicEvent.name} (ID: ${formData.clinic_event_id})`
-      );
-      console.log(
-        `🎯 Date/Time being saved: ${appointmentData.appointment_datetime}`
-      );
-      console.log("🎯 =======================================");
 
       const url = appointment
         ? `${API_BASE_URL}/api/appointments/${appointment.id}/`
@@ -617,8 +524,6 @@ export default function AppointmentModal({
 
       const method = appointment ? "PUT" : "POST";
 
-      console.log("💾 Request URL:", url);
-      console.log("💾 Request method:", method);
 
       const response = await fetch(url, {
         method,
@@ -629,25 +534,15 @@ export default function AppointmentModal({
         body: JSON.stringify(appointmentData),
       });
 
-      console.log("💾 Response status:", response.status);
-      console.log(
-        "💾 Response headers:",
-        Object.fromEntries(response.headers.entries())
-      );
 
       if (response.ok) {
         const responseData = await response.json();
-        console.log("✅ Success response:", responseData);
 
         // BACKEND BUG WORKAROUND: Verify the saved patient matches what we sent
         const expectedPatientName = `${finalPatient.first_name} ${finalPatient.last_name}`;
         const actualPatientName = responseData.patient_name;
 
         if (actualPatientName !== expectedPatientName) {
-          console.log("❌ BACKEND BUG DETECTED:");
-          console.log(`   Expected patient: ${expectedPatientName}`);
-          console.log(`   Backend returned: ${actualPatientName}`);
-          console.log(`   Patient ID sent: ${formData.patient_id}`);
 
           Alert.alert(
             "Backend Data Error",
@@ -659,7 +554,6 @@ export default function AppointmentModal({
               {
                 text: "Report Bug",
                 onPress: () => {
-                  console.log("🐛 User requested to report backend bug");
                   // Could open bug report form or email
                 },
               },
@@ -690,21 +584,16 @@ export default function AppointmentModal({
         );
       } else {
         const errorText = await response.text();
-        console.log("❌ Error response status:", response.status);
-        console.log("❌ Error response text:", errorText);
 
         let errorData;
         try {
           errorData = JSON.parse(errorText);
-          console.log("❌ Parsed error data:", errorData);
         } catch (parseError) {
-          console.log("❌ Could not parse error as JSON:", parseError);
           errorData = { message: errorText };
         }
 
         // Handle token expiration
         if (response.status === 401 && errorData.code === "token_not_valid") {
-          console.log("🔐 Token expired, redirecting to login");
           await tokenStore.removeItem("access_token");
           await tokenStore.removeItem("refresh_token");
           Alert.alert(
@@ -822,11 +711,6 @@ export default function AppointmentModal({
                     <Picker
                       selectedValue={formData.clinic_event_id}
                       onValueChange={(value) => {
-                        console.log(
-                          "Clinic event picker value:",
-                          value,
-                          typeof value
-                        );
 
                         // Handle both string and number values
                         const numericValue =
@@ -843,10 +727,6 @@ export default function AppointmentModal({
                             ...prev,
                             clinic_event_id: numericValue,
                           }));
-                          console.log(
-                            "Updated clinic_event_id to:",
-                            numericValue
-                          );
                         }
                       }}
                       style={styles.picker}
@@ -878,7 +758,6 @@ export default function AppointmentModal({
                   <Picker
                     selectedValue={formData.appointment_time || "09:00"}
                     onValueChange={(value) => {
-                      console.log("Time picker value:", value, typeof value);
                       if (value && typeof value === "string" && value !== "") {
                         setFormData((prev) => ({
                           ...prev,
@@ -909,11 +788,6 @@ export default function AppointmentModal({
                   <Picker
                     selectedValue={formData.duration || 30}
                     onValueChange={(value) => {
-                      console.log(
-                        "Duration picker value:",
-                        value,
-                        typeof value
-                      );
 
                       // Handle both string and number values
                       const numericValue =
@@ -928,7 +802,6 @@ export default function AppointmentModal({
                           ...prev,
                           duration: numericValue,
                         }));
-                        console.log("Updated duration to:", numericValue);
                       }
                     }}
                     style={styles.picker}
@@ -953,25 +826,6 @@ export default function AppointmentModal({
                       <Picker
                         selectedValue={formData.patient_id || 0}
                         onValueChange={(value) => {
-                          console.log(
-                            "🧪 Patient picker onValueChange triggered:"
-                          );
-                          console.log(
-                            "  - Selected value:",
-                            value,
-                            typeof value
-                          );
-                          console.log(
-                            "  - Current formData.patient_id:",
-                            formData.patient_id
-                          );
-                          console.log(
-                            "  - Available patients:",
-                            patients.map((p) => ({
-                              id: p.id,
-                              name: `${p.first_name} ${p.last_name}`,
-                            }))
-                          );
 
                           // Handle both string and number values, ensure we get a valid number
                           let numericValue = 0;
@@ -986,25 +840,11 @@ export default function AppointmentModal({
                             (p) => p.id === numericValue
                           );
 
-                          console.log(
-                            "  - Converted to numeric:",
-                            numericValue
-                          );
-                          console.log("  - Found patient:", selectedPatient);
 
                           // ENHANCED DEBUGGING: Log the exact patient being selected
                           if (selectedPatient) {
-                            console.log(
-                              `  - ✅ SELECTING PATIENT: ${selectedPatient.first_name} ${selectedPatient.last_name} (ID: ${selectedPatient.id})`
-                            );
                           } else if (numericValue === 0) {
-                            console.log(
-                              "  - ℹ️ Clearing patient selection (Select Patient)"
-                            );
                           } else {
-                            console.log(
-                              `  - ❌ INVALID SELECTION: Patient ID ${numericValue} not found!`
-                            );
                           }
 
                           if (numericValue === 0 || selectedPatient) {
@@ -1014,22 +854,9 @@ export default function AppointmentModal({
                                 ...prev,
                                 patient_id: numericValue,
                               };
-                              console.log("  - Updated formData:", newFormData);
-                              console.log(
-                                `  - 🎯 FINAL PATIENT SELECTION: ${
-                                  numericValue === 0
-                                    ? "None"
-                                    : selectedPatient
-                                    ? `${selectedPatient.first_name} ${selectedPatient.last_name} (ID: ${numericValue})`
-                                    : `Unknown patient (ID: ${numericValue})`
-                                }`
-                              );
                               return newFormData;
                             });
                           } else {
-                            console.log(
-                              "  - ❌ Invalid patient ID, ignoring selection"
-                            );
                           }
                         }}
                         style={styles.picker}
@@ -1042,9 +869,6 @@ export default function AppointmentModal({
                               : patient.username
                               ? patient.username
                               : `Patient ${patient.id}`;
-                          console.log(
-                            `Rendering patient picker item: ${patientLabel} (ID: ${patient.id})`
-                          );
                           return (
                             <Picker.Item
                               key={patient.id}
@@ -1075,11 +899,6 @@ export default function AppointmentModal({
                       <Picker
                         selectedValue={formData.doctor_id || 0}
                         onValueChange={(value) => {
-                          console.log(
-                            "Doctor picker value:",
-                            value,
-                            typeof value
-                          );
 
                           // Handle both string and number values
                           const numericValue =
@@ -1096,7 +915,6 @@ export default function AppointmentModal({
                               ...prev,
                               doctor_id: numericValue,
                             }));
-                            console.log("Updated doctor_id to:", numericValue);
                           }
                         }}
                         style={styles.picker}
@@ -1136,7 +954,6 @@ export default function AppointmentModal({
                   <Picker
                     selectedValue={formData.status || "pending"}
                     onValueChange={(value) => {
-                      console.log("Status picker value:", value, typeof value);
                       if (value && typeof value === "string" && value !== "") {
                         setFormData((prev) => ({ ...prev, status: value }));
                       }

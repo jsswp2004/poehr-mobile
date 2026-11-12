@@ -76,13 +76,11 @@ export default function PatientsScreen() {
 
   // Debug: Log component mount
   useEffect(() => {
-    console.log("🏥 PatientsScreen component mounted");
   }, []);
 
   // Refresh patients when screen comes into focus (e.g., after registration)
   useFocusEffect(
     useCallback(() => {
-      console.log("🔄 PatientsScreen focused - refreshing patient list");
       if (
         user &&
         (user.role === "doctor" ||
@@ -101,23 +99,14 @@ export default function PatientsScreen() {
 
   useEffect(() => {
     if (user) {
-      console.log("👤 User loaded in Patients tab:", user);
-      console.log("🔐 User role:", user.role);
-      console.log("🔍 PATIENTS DEBUG - Role type check:", typeof user.role);
-      console.log("🔍 PATIENTS DEBUG - Role === 'registrar':", user.role === "registrar");
-      console.log("🔍 PATIENTS DEBUG - Role === 'admin':", user.role === "admin");
-      console.log("🔍 PATIENTS DEBUG - Role === 'doctor':", user.role === "doctor");
       if (
         user.role === "doctor" ||
         user.role === "admin" ||
         user.role === "system_admin" ||
         user.role === "registrar"
       ) {
-        console.log("✅ User has access to patients, loading patients...");
         loadPatients();
       } else {
-        console.log("❌ User does not have access to patients, redirecting...");
-        console.log("❌ PATIENTS DEBUG - Denied role was:", user.role);
         // Redirect patients to home tab
         router.replace("/(tabs)");
       }
@@ -129,8 +118,6 @@ export default function PatientsScreen() {
       const token = await tokenStore.getItem("access_token");
       if (token) {
         const decodedToken: any = jwtDecode(token);
-        console.log("🔍 PATIENTS DEBUG - Raw JWT role:", decodedToken.role);
-        console.log("🔍 PATIENTS DEBUG - Full JWT token:", decodedToken);
         setUser({
           username: decodedToken.username,
           firstName: decodedToken.first_name,
@@ -154,20 +141,13 @@ export default function PatientsScreen() {
   };
 
   const loadPatients = async () => {
-    console.log("🔄 Starting to load patients...");
-    console.log("🌐 API_BASE_URL:", API_BASE_URL);
     setLoadingPatients(true);
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) {
-        console.log("❌ No access token found");
         return;
       }
 
-      console.log(
-        "🔑 Token found, making API request to:",
-        `${API_BASE_URL}/api/users/patients/?page_size=100&ordering=-id`
-      );
       const response = await fetch(
         `${API_BASE_URL}/api/users/patients/?page_size=100&ordering=-id`,
         {
@@ -178,49 +158,24 @@ export default function PatientsScreen() {
         }
       );
 
-      console.log("📡 API Response status:", response.status);
-      console.log("📡 API Response headers:", response.headers);
 
       if (response.ok) {
         const data = await response.json();
-        console.log("✅ Patients API success! Data received:", data);
-        console.log("✅ Data type:", typeof data);
-        console.log("✅ Is data an array?", Array.isArray(data));
 
         // Check for pagination information
         if (data.count !== undefined) {
-          console.log("📄 Pagination detected:");
-          console.log("📄 Total patients in database:", data.count);
-          console.log("📄 Next page URL:", data.next);
-          console.log("📄 Previous page URL:", data.previous);
         }
 
         // Handle both paginated and non-paginated responses
         const patientsArray = Array.isArray(data) ? data : data.results || [];
-        console.log("📊 Number of patients returned:", patientsArray.length);
-        console.log("🔍 First patient sample:", patientsArray[0]);
-        console.log(
-          "🔍 Last patient sample:",
-          patientsArray[patientsArray.length - 1]
-        );
 
         // Log all patient names for debugging
         if (patientsArray.length > 0) {
-          console.log(
-            "👥 All patients:",
-            patientsArray.map(
-              (p: Patient) => `${p.first_name} ${p.last_name} (ID: ${p.id})`
-            )
-          );
         } else {
-          console.log("⚠️ No patients in the array - this might be the issue!");
         }
 
         setPatients(patientsArray);
       } else if (response.status === 404) {
-        console.log(
-          "⚠️ Patients endpoint not found (404) - Backend might be missing /api/users/patients/ endpoint"
-        );
         // Show user-friendly message about missing endpoint
         Alert.alert(
           "Patients Feature Not Available",
@@ -228,9 +183,7 @@ export default function PatientsScreen() {
           [{ text: "OK" }]
         );
       } else {
-        console.log("❌ Failed to load patients. Status:", response.status);
         const errorText = await response.text();
-        console.log("❌ Error response:", errorText);
 
         // Show generic error for other status codes
         Alert.alert(
@@ -240,8 +193,6 @@ export default function PatientsScreen() {
         );
       }
     } catch (error) {
-      console.log("💥 Error loading patients:", error);
-      console.log("💥 Error details:", JSON.stringify(error, null, 2));
 
       // Show network error
       Alert.alert(
@@ -251,7 +202,6 @@ export default function PatientsScreen() {
       );
     } finally {
       setLoadingPatients(false);
-      console.log("🏁 Finished loading patients");
     }
   };
 
@@ -327,7 +277,6 @@ export default function PatientsScreen() {
       "CSV Export",
       `Generated CSV with ${filteredPatients.length} patients. In a real app, this would download a file.`
     );
-    console.log("CSV Content:", csvContent);
   };
 
   const savePatient = async () => {
@@ -341,7 +290,6 @@ export default function PatientsScreen() {
         return;
       }
 
-      console.log("🔄 Saving patient data:", editedPatient);
 
       const response = await fetch(
         `${API_BASE_URL}/api/users/patients/${editedPatient.id}/`,
@@ -368,7 +316,6 @@ export default function PatientsScreen() {
 
       if (response.ok) {
         const updatedPatient = await response.json();
-        console.log("✅ Patient updated successfully:", updatedPatient);
 
         // Update the patient in the local state
         setPatients((prevPatients) =>
@@ -387,14 +334,12 @@ export default function PatientsScreen() {
         Alert.alert("Success", "Patient information updated successfully!");
       } else {
         const errorText = await response.text();
-        console.log("❌ Failed to update patient:", errorText);
         Alert.alert(
           "Error",
           "Failed to update patient information. Please try again."
         );
       }
     } catch (error) {
-      console.log("💥 Error updating patient:", error);
       Alert.alert(
         "Error",
         "Network error. Please check your connection and try again."
@@ -439,7 +384,6 @@ export default function PatientsScreen() {
               );
 
               if (response.ok || response.status === 204) {
-                console.log("✅ Patient deleted successfully");
 
                 // Remove patient from the list
                 setPatients((prevPatients) =>
@@ -455,14 +399,12 @@ export default function PatientsScreen() {
                 Alert.alert("Success", "Patient deleted successfully!");
               } else {
                 const errorText = await response.text();
-                console.log("❌ Failed to delete patient:", errorText);
                 Alert.alert(
                   "Error",
                   "Failed to delete patient. Please try again."
                 );
               }
             } catch (error) {
-              console.log("💥 Error deleting patient:", error);
               Alert.alert(
                 "Error",
                 "Network error. Please check your connection and try again."

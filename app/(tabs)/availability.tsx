@@ -100,15 +100,12 @@ export default function AvailabilityScreen() {
 
   useEffect(() => {
     const fetchDoctors = async () => {
-      console.log("🔄 Loading doctors...");
       try {
         const token = await tokenStore.getItem("access_token");
         if (!token) {
-          console.log("❌ No token found for doctors");
           return;
         }
 
-        console.log("🔑 Making doctors API request...");
         const response = await fetch(`${API_BASE_URL}/api/users/doctors/`, {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -116,16 +113,11 @@ export default function AvailabilityScreen() {
           },
         });
 
-        console.log("📡 Doctors API response status:", response.status);
         if (response.ok) {
           const data = await response.json();
-          console.log("✅ Doctors loaded:", data);
-          console.log("📊 Number of doctors:", data?.length || 0);
           setDoctors(data || []);
         } else {
-          console.log("❌ Failed to load doctors, status:", response.status);
           const errorText = await response.text();
-          console.log("Error details:", errorText);
         }
       } catch (error) {
         console.error("💥 Error loading doctors:", error);
@@ -153,7 +145,6 @@ export default function AvailabilityScreen() {
           setHolidays(data.filter((h: Holiday) => h.is_recognized) || []);
         }
       } catch (error) {
-        console.log("Could not load holidays:", error);
       }
     };
     fetchHolidays();
@@ -179,7 +170,6 @@ export default function AvailabilityScreen() {
           (s: AvailabilityItem) =>
             String(s.doctor) === String(selectedDoctor.id)
         );
-        console.log("Doctor schedules:", doctorSchedules);
         setSchedules(uniqueByTime(doctorSchedules));
       } else {
         Alert.alert("Error", "Failed to load schedules");
@@ -231,10 +221,6 @@ export default function AvailabilityScreen() {
       block_type: formData.is_blocked ? formData.block_type : null,
     };
 
-    console.log("=== SAVE REQUEST DEBUG ===");
-    console.log("Payload being sent:", JSON.stringify(payload, null, 2));
-    console.log("Selected doctor:", selectedDoctor);
-    console.log("Form data:", formData);
 
     try {
       const token = await tokenStore.getItem("access_token");
@@ -249,13 +235,6 @@ export default function AvailabilityScreen() {
 
       const method = editingId ? "PUT" : "POST";
 
-      console.log("Making request to:", url);
-      console.log("Method:", method);
-      console.log("Headers:", {
-        Authorization: `Bearer ${token.substring(0, 20)}...`,
-        "Content-Type": "application/json",
-      });
-      console.log("API_BASE_URL:", API_BASE_URL);
 
       const response = await fetch(url, {
         method,
@@ -410,7 +389,6 @@ export default function AvailabilityScreen() {
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => {
-              console.log("🔄 Doctor dropdown pressed");
               setShowDoctorModal(true);
             }}
             disabled={doctors.length === 0}
@@ -696,7 +674,6 @@ export default function AvailabilityScreen() {
                   key={doc.id}
                   style={styles.modalOption}
                   onPress={() => {
-                    console.log("🔄 Selected doctor:", doc);
                     setSelectedDoctor(doc);
                     setShowDoctorModal(false);
                   }}
