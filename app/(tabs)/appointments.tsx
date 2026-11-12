@@ -7,6 +7,7 @@ import {
   Alert,
   ScrollView,
   StyleSheet,
+  TextInput,
   TouchableOpacity,
 } from "react-native";
 import { Calendar, DateData } from "react-native-calendars";
@@ -59,6 +60,16 @@ interface Doctor {
   email: string;
 }
 
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "pending", label: "Pending" },
+  { value: "in_progress", label: "In progress" },
+  { value: "completed", label: "Completed" },
+  { value: "no_show", label: "No show" },
+  { value: "cancelled", label: "Cancelled" },
+];
+
 export default function AppointmentsScreen() {
   const { user, loading: userLoading } = useCurrentUser();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -68,6 +79,9 @@ export default function AppointmentsScreen() {
     moment().format("YYYY-MM-DD")
   );
   const loading = userLoading;
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [providerFilter, setProviderFilter] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<
@@ -488,6 +502,30 @@ export default function AppointmentsScreen() {
     );
   }
   const dayAppointments = getAppointmentsForDate(selectedDate);
+  const query = search.trim().toLowerCase();
+  const filteredAppointments = dayAppointments.filter((a) => {
+    if (statusFilter !== "all" && a.status !== statusFilter) return false;
+    if (providerFilter !== null && a.provider !== providerFilter) return false;
+    if (query) {
+      const haystack = [a.patient_name, a.title, a.provider_name, a.doctor_name]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      if (!haystack.includes(query)) return false;
+    }
+    return true;
+  });
+  const filtersActive =
+    statusFilter !== "all" || providerFilter !== null || query !== "";
+  const clearFilters = () => {
+    setSearch("");
+    setStatusFilter("all");
+    setProviderFilter(null);
+  };
+  // Doctors only ever see their own schedule, so the provider filter is for
+  // admins, nurses and registrars.
+  const showProviderFilter =
+    !!user && user.role !== "patient" && user.role !== "doctor" && doctors.length > 1;
   const dayBlockedDates = getBlockedDatesForDate(selectedDate);
 
   return (
@@ -607,15 +645,105 @@ export default function AppointmentsScreen() {
           <ThemedView style={styles.appointmentsSection}>
             <ThemedView style={styles.sectionTitleWrapper}>
               <ThemedText style={styles.sectionTitle}>
-                Appointments📅({dayAppointments.length})
+                Appointments📅(
+                {filtersActive
+                  ? `${filteredAppointments.length} of ${dayAppointments.length}`
+                  : dayAppointments.length}
+                )
               </ThemedText>
             </ThemedView>
-            {dayAppointments.map((appointment) => {
-              console.log(
-                "🔍 Rendering appointment:",
-                appointment.id,
-                appointment.title
-              );
+            <ThemedView style={styles.filterBar}>
+              <TextInput
+                style={styles.filterSearch}
+                placeholder="Search patient, visit or provider"
+                value={search}
+                onChangeText={setSearch}
+                autoCapitalize="none"
+                autoCorrect={false}
+                clearButtonMode="while-editing"
+              />
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.chipRow}
+              >
+                {STATUS_FILTERS.map((f) => (
+                  <TouchableOpacity
+                    key={f.value}
+                    style={[
+                      styles.chip,
+                      statusFilter === f.value && styles.chipActive,
+                    ]}
+                    onPress={() => setStatusFilter(f.value)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected: statusFilter === f.value }}
+                  >
+                    <ThemedText
+                      style={[
+                        styles.chipText,
+                        statusFilter === f.value && styles.chipTextActive,
+                      ]}
+                    >
+                      {f.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+              {showProviderFilter && (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.chipRow}
+                >
+                  <TouchableOpacity
+                    style={[
+                      styles.chip,
+                      providerFilter === null && styles.chipActive,
+                    ]}
+                    onPress={() => setProviderFilter(null)}
+                    accessibilityRole="button"
+                  >
+                    <ThemedText
+                      style={[
+                        styles.chipText,
+                        providerFilter === null && styles.chipTextActive,
+                      ]}
+                    >
+                      All providers
+                    </ThemedText>
+                  </TouchableOpacity>
+                  {doctors.map((d) => (
+                    <TouchableOpacity
+                      key={d.id}
+                      style={[
+                        styles.chip,
+                        providerFilter === d.id && styles.chipActive,
+                      ]}
+                      onPress={() => setProviderFilter(d.id)}
+                      accessibilityRole="button"
+                    >
+                      <ThemedText
+                        style={[
+                          styles.chipText,
+                          providerFilter === d.id && styles.chipTextActive,
+                        ]}
+                      >
+                        Dr. {d.last_name}
+                      </ThemedText>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              )}
+            </ThemedView>
+            {filteredAppointments.length === 0 && (
+              <ThemedView style={styles.noMatch}>
+                <ThemedText>No appointments match your filters.</ThemedText>
+                <TouchableOpacity onPress={clearFilters}>
+                  <ThemedText style={styles.clearLink}>Clear filters</ThemedText>
+                </TouchableOpacity>
+              </ThemedView>
+            )}
+            {filteredAppointments.map((appointment) => {
               return (
                 <ThemedView key={appointment.id} style={styles.appointmentItem}>
                   <ThemedView style={styles.appointmentHeader}>
@@ -1026,5 +1154,51 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     fontSize: 16,
+  },
+  filterBar: {
+    paddingHorizontal: 4,
+    marginBottom: 8,
+    backgroundColor: "transparent",
+  },
+  filterSearch: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 15,
+    backgroundColor: "#fff",
+    color: "#11181C",
+  },
+  chipRow: {
+    paddingVertical: 8,
+    gap: 8,
+  },
+  chip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 18,
+    backgroundColor: "#f0f2f5",
+  },
+  chipActive: {
+    backgroundColor: "#1976d2",
+  },
+  chipText: {
+    fontSize: 13,
+    fontWeight: "600",
+    color: "#3d4852",
+  },
+  chipTextActive: {
+    color: "#fff",
+  },
+  noMatch: {
+    alignItems: "center",
+    paddingVertical: 16,
+    gap: 6,
+    backgroundColor: "transparent",
+  },
+  clearLink: {
+    color: "#1976d2",
+    fontWeight: "600",
   },
 });
