@@ -265,8 +265,8 @@ export default function BlockedDateModal({
           <TouchableOpacity onPress={onClose}>
             <ThemedText style={styles.cancelButton}>Cancel</ThemedText>
           </TouchableOpacity>
-          <ThemedText type="title">
-            {blockedDate ? "Edit Blocked Date" : "Block Date"}
+          <ThemedText style={styles.headerTitle}>
+            {blockedDate ? "Edit blocked date" : "Block date"}
           </ThemedText>
           <TouchableOpacity onPress={handleSave} disabled={saving}>
             <ThemedText
@@ -276,7 +276,11 @@ export default function BlockedDateModal({
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
-        <ScrollView style={styles.content}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentInner}
+          keyboardShouldPersistTaps="handled"
+        >
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
@@ -439,112 +443,131 @@ export default function BlockedDateModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    minHeight: 60,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#e3e8ee",
+    backgroundColor: "#fff",
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "700",
   },
   cancelButton: {
-    color: "#c62828",
+    color: "#5b6670",
     fontSize: 16,
+    fontWeight: "600",
+    paddingVertical: 8,
   },
   saveButton: {
     color: "#1976d2",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
+    paddingVertical: 8,
   },
   disabledButton: {
     opacity: 0.5,
   },
   content: {
     flex: 1,
-    padding: 16,
+  },
+  contentInner: {
+    padding: 20,
+    paddingBottom: 48,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 18,
+    backgroundColor: "transparent",
   },
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
   },
   dateText: {
     fontSize: 16,
-    padding: 12,
+    padding: 14,
     backgroundColor: "transparent",
-    borderRadius: 8,
+    color: "#11181C",
   },
   dateInput: {
-    backgroundColor: "transparent",
-    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
+    minHeight: 50,
+    justifyContent: "center",
   },
   pickerContainer: {
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 12,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "#1976d2",
-    minHeight: 60,
+    borderColor: "#c5ccd4",
+    minHeight: 56,
   },
   picker: {
     height: 50,
-    color: "#000",
+    color: "#11181C",
     backgroundColor: "transparent",
   },
   customPickerButton: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 12,
-    backgroundColor: "#f0f0f0",
-    borderRadius: 8,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
     minHeight: 50,
   },
   customPickerText: {
     fontSize: 16,
-    color: "#333",
+    color: "#11181C",
     flex: 1,
   },
   dropdownArrow: {
-    fontSize: 16,
-    color: "#1976d2",
+    fontSize: 12,
+    color: "#5b6670",
     marginLeft: 8,
   },
   dropdownOptions: {
     backgroundColor: "#fff",
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#e3e8ee",
     marginTop: 4,
-    maxHeight: 200,
+    maxHeight: 220,
   },
   dropdownOption: {
-    padding: 12,
+    minHeight: 48,
+    justifyContent: "center",
+    paddingHorizontal: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
+    borderBottomColor: "#eef1f4",
   },
   selectedDropdownOption: {
-    backgroundColor: "#1976d2",
+    backgroundColor: "#e8f1fb",
   },
   dropdownOptionText: {
     fontSize: 16,
-    color: "#333",
+    color: "#11181C",
   },
   selectedDropdownOptionText: {
-    color: "#fff",
-    fontWeight: "bold",
+    color: "#0d5cab",
+    fontWeight: "700",
   },
   helperText: {
     fontSize: 12,
-    opacity: 0.7,
+    color: "#5b6670",
     marginTop: 4,
   },
   reasonButtons: {
@@ -553,12 +576,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   reasonButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: "transparent",
-    borderRadius: 16,
+    minHeight: 40,
+    justifyContent: "center",
+    paddingHorizontal: 14,
+    backgroundColor: "#f5f7fa",
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "transparent",
+    borderColor: "#e3e8ee",
   },
   selectedReasonButton: {
     backgroundColor: "#1976d2",
@@ -566,19 +590,22 @@ const styles = StyleSheet.create({
   },
   reasonButtonText: {
     fontSize: 14,
+    color: "#3d4852",
+    fontWeight: "500",
   },
   selectedReasonButtonText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#fff",
+    fontWeight: "700",
   },
   textInput: {
     backgroundColor: "#fff",
-    borderRadius: 8,
-    padding: 12,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 16,
-    color: "#000",
+    color: "#11181C",
     minHeight: 80,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
   },
 });

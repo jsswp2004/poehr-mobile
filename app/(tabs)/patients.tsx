@@ -681,7 +681,7 @@ export default function PatientsScreen() {
                         disabled={deletingPatient}
                       >
                         <ThemedText style={styles.editButtonText}>
-                          ✏️ Edit
+                          Edit
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -690,7 +690,7 @@ export default function PatientsScreen() {
                         disabled={deletingPatient}
                       >
                         <ThemedText style={styles.deleteButtonText}>
-                          {deletingPatient ? "Deleting..." : "🗑️ Delete"}
+                          {deletingPatient ? "Deleting..." : "Delete"}
                         </ThemedText>
                       </TouchableOpacity>
                     </>
@@ -710,7 +710,7 @@ export default function PatientsScreen() {
                     disabled={savingPatient}
                   >
                     <ThemedText style={styles.saveButtonText}>
-                      {savingPatient ? "💾 Saving..." : "💾 Save"}
+                      {savingPatient ? "Saving..." : "Save"}
                     </ThemedText>
                   </TouchableOpacity>
                   <TouchableOpacity
@@ -719,7 +719,7 @@ export default function PatientsScreen() {
                     disabled={savingPatient}
                   >
                     <ThemedText style={styles.cancelButtonText}>
-                      ❌ Cancel
+                      Cancel
                     </ThemedText>
                   </TouchableOpacity>
                 </>
@@ -1190,133 +1190,153 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
     borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    backgroundColor: "#f5f5f5",
-    minHeight: 70,
+    borderBottomColor: "#e3e8ee",
+    backgroundColor: "#fff",
+    minHeight: 68,
   },
   modalTitleContainer: {
     flex: 1,
-    paddingRight: 15,
+    paddingRight: 12,
     justifyContent: "center",
+    backgroundColor: "transparent",
   },
   modalTitle: {
     flexShrink: 1,
-    fontSize: 18,
-    lineHeight: 24,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "700",
   },
   closeButton: {
-    padding: 10,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#f5f7fa",
+    alignItems: "center",
+    justifyContent: "center",
   },
   closeButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#666",
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#3d4852",
   },
   modalContent: {
     flex: 1,
     padding: 20,
   },
   detailSection: {
-    marginBottom: 25,
-    backgroundColor: "#f5f5f5",
-    padding: 15,
-    borderRadius: 8,
+    marginBottom: 20,
+    backgroundColor: "#fff",
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e3e8ee",
   },
   detailRow: {
     flexDirection: "row",
-    marginBottom: 8,
+    paddingVertical: 10,
     alignItems: "flex-start",
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#eef1f4",
+    backgroundColor: "transparent",
   },
   detailLabel: {
-    fontWeight: "bold",
-    width: 120,
-    color: "#495057",
+    fontWeight: "600",
+    fontSize: 13,
+    width: 112,
+    paddingTop: 2,
+    color: "#5b6670",
   },
   detailValue: {
     flex: 1,
-    color: "#333",
+    fontSize: 15,
+    color: "#11181C",
   },
   medicalHistory: {
-    backgroundColor: "#fff",
-    padding: 15,
-    borderRadius: 8,
+    backgroundColor: "#f5f7fa",
+    padding: 14,
+    borderRadius: 12,
     marginTop: 8,
-    color: "#333",
+    color: "#11181C",
     lineHeight: 20,
-    borderWidth: 1,
-    borderColor: "#dee2e6",
   },
   // Edit modal styles
   modalHeaderButtons: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 8,
+    backgroundColor: "transparent",
   },
   editButton: {
-    backgroundColor: "#1976d2",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#e8f1fb",
+    minHeight: 36,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   editButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#0d5cab",
+    fontSize: 13,
+    fontWeight: "600",
   },
   deleteButton: {
-    backgroundColor: "#c62828",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#fde7e7",
+    minHeight: 36,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   deleteButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#a31d1d",
+    fontSize: 13,
+    fontWeight: "600",
   },
   saveButton: {
-    backgroundColor: "#27ae60",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#1976d2",
+    minHeight: 36,
+    paddingHorizontal: 16,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   saveButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#fff",
+    fontSize: 13,
+    fontWeight: "600",
   },
   cancelButton: {
-    backgroundColor: "#888",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
+    backgroundColor: "#f5f7fa",
+    minHeight: 36,
+    paddingHorizontal: 14,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   cancelButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
+    color: "#3d4852",
+    fontSize: 13,
+    fontWeight: "600",
   },
   editInput: {
+    flex: 1,
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 4,
-    padding: 8,
-    fontSize: 14,
-    color: "#333",
-    minHeight: 40,
+    borderColor: "#c5ccd4",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    fontSize: 15,
+    color: "#11181C",
+    minHeight: 44,
   },
   editTextArea: {
     backgroundColor: "#fff",
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 4,
-    padding: 8,
-    fontSize: 14,
-    color: "#333",
-    minHeight: 80,
+    borderColor: "#c5ccd4",
+    borderRadius: 12,
+    padding: 12,
+    fontSize: 15,
+    color: "#11181C",
+    minHeight: 90,
     textAlignVertical: "top",
   },
   listHeader: {

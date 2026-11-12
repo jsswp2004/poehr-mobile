@@ -249,7 +249,7 @@ export default function MyScheduleScreen() {
                 {rows.length} appointment{rows.length === 1 ? "" : "s"}
                 {truncated ? " (showing first results)" : ""}
               </Text>
-            ) : null
+            ) : undefined
           }
           renderItem={({ item }) => {
             const a = item.appointment;

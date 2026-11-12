@@ -1,7 +1,8 @@
-import { Tabs } from "expo-router";
+import { Tabs, router } from "expo-router";
 import React from "react";
+import { TouchableOpacity } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { AppHeader } from "@/components/AppHeader";
 import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
@@ -11,18 +12,39 @@ import { STAFF_ROLES, useCurrentUser } from "@/hooks/useCurrentUser";
 // Five tabs: Home, My Day (staff), Calendar, Patients, More.
 // Register patient and Availability are still real routes, reached from
 // Home and More, so they are hidden from the tab bar (href: null).
+// Screens reached from More/Home have no tab, so give them a back button.
+const subScreenHeader = {
+  headerShown: true,
+  headerShadowVisible: false,
+  // The navigator header already handles the safe area.
+  sceneStyle: { paddingTop: 0, backgroundColor: "#fff" },
+  headerTitleAlign: "left" as const,
+  headerTitleStyle: { fontSize: 18, fontWeight: "700" as const },
+  headerLeft: () => (
+    <TouchableOpacity
+      onPress={() => router.back()}
+      accessibilityLabel="Go back"
+      style={{ minWidth: 44, minHeight: 44, justifyContent: "center", paddingLeft: 16 }}
+    >
+      <IconSymbol name="chevron.left" size={24} color="#0d5cab" />
+    </TouchableOpacity>
+  ),
+};
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user } = useCurrentUser();
   const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const insets = useSafeAreaInsets();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: Colors[colorScheme ?? "light"].tint,
-        headerShown: true,
-        header: () => <AppHeader />,
-        tabBarButton: HapticTab,
+        // Redesign: each screen draws its own title row, so no global header.
+        headerShown: false,
+        sceneStyle: { paddingTop: insets.top, backgroundColor: "#fff" },
+        tabBarButton: HapticTab as any,
       }}
     >
       <Tabs.Screen
@@ -30,7 +52,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="house.fill" color={color} />
+            <IconSymbol size={28} name="house.fill" color={color as string} />
           ),
         }}
       />
@@ -41,7 +63,7 @@ export default function TabLayout() {
           // Hidden until we know the signed-in user is staff.
           href: isStaff ? undefined : null,
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="list.bullet" color={color} />
+            <IconSymbol size={28} name="list.bullet" color={color as string} />
           ),
         }}
       />
@@ -50,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: "Calendar",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="calendar" color={color} />
+            <IconSymbol size={28} name="calendar" color={color as string} />
           ),
         }}
       />
@@ -59,7 +81,7 @@ export default function TabLayout() {
         options={{
           title: "Patients",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.2.fill" color={color} />
+            <IconSymbol size={28} name="person.2.fill" color={color as string} />
           ),
         }}
       />
@@ -68,12 +90,18 @@ export default function TabLayout() {
         options={{
           title: "More",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="ellipsis" color={color} />
+            <IconSymbol size={28} name="ellipsis" color={color as string} />
           ),
         }}
       />
-      <Tabs.Screen name="register-patient" options={{ href: null, title: "Register" }} />
-      <Tabs.Screen name="availability" options={{ href: null, title: "Availability" }} />
+      <Tabs.Screen
+        name="register-patient"
+        options={{ href: null, title: "Register patient", ...subScreenHeader }}
+      />
+      <Tabs.Screen
+        name="availability"
+        options={{ href: null, title: "Availability", ...subScreenHeader }}
+      />
     </Tabs>
   );
 }

@@ -770,8 +770,8 @@ export default function AppointmentModal({
           <TouchableOpacity onPress={onClose}>
             <ThemedText style={styles.cancelButton}>Cancel</ThemedText>
           </TouchableOpacity>
-          <ThemedText type="title">
-            {appointment ? "Edit Appointment" : "New Appointment"}
+          <ThemedText style={styles.headerTitle}>
+            {appointment ? "Edit appointment" : "New appointment"}
           </ThemedText>
           <TouchableOpacity onPress={handleSave} disabled={saving}>
             <ThemedText
@@ -782,7 +782,11 @@ export default function AppointmentModal({
           </TouchableOpacity>
         </ThemedView>
 
-        <ScrollView style={styles.content}>
+        <ScrollView
+          style={styles.content}
+          contentContainerStyle={styles.contentInner}
+          keyboardShouldPersistTaps="handled"
+        >
           {loading ? (
             <ThemedText>Loading...</ThemedText>
           ) : (
@@ -900,7 +904,7 @@ export default function AppointmentModal({
 
               {/* Duration Section */}
               <ThemedView style={styles.section}>
-                <ThemedText style={styles.label}>Duration (minutes)</ThemedText>
+                <ThemedText style={styles.label}>Duration</ThemedText>
                 <ThemedView style={styles.pickerContainer}>
                   <Picker
                     selectedValue={formData.duration || 30}
@@ -1157,7 +1161,7 @@ export default function AppointmentModal({
                 <TextInput
                   style={styles.textInput}
                   placeholder="Add notes (optional)"
-                  placeholderTextColor="#999"
+                  placeholderTextColor="#8b95a0"
                   value={formData.notes || ""}
                   onChangeText={(text) =>
                     setFormData((prev) => ({ ...prev, notes: text || "" }))
@@ -1178,76 +1182,97 @@ export default function AppointmentModal({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    minHeight: 60,
     borderBottomWidth: 1,
-    borderBottomColor: "#ddd",
+    borderBottomColor: "#e3e8ee",
+    backgroundColor: "#fff",
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontWeight: "700",
   },
   cancelButton: {
-    color: "#c62828",
+    color: "#5b6670",
     fontSize: 16,
+    fontWeight: "600",
+    paddingVertical: 8,
   },
   saveButton: {
     color: "#1976d2",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "700",
+    paddingVertical: 8,
   },
   disabledButton: {
     opacity: 0.5,
   },
   content: {
     flex: 1,
-    padding: 16,
+  },
+  contentInner: {
+    padding: 20,
+    paddingBottom: 48,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 18,
+    backgroundColor: "transparent",
   },
   label: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontSize: 13,
+    fontWeight: "600",
+    marginBottom: 6,
   },
   dateText: {
     fontSize: 16,
-    padding: 12,
+    padding: 14,
     backgroundColor: "transparent",
-    borderRadius: 8,
+    color: "#11181C",
   },
   dateInput: {
-    backgroundColor: "transparent",
-    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
+    minHeight: 50,
+    justifyContent: "center",
   },
   pickerContainer: {
-    backgroundColor: "transparent",
-    borderRadius: 8,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#c5ccd4",
     overflow: "hidden",
   },
   picker: {
     height: Platform.OS === "ios" ? 150 : 50,
   },
   textInput: {
-    backgroundColor: "transparent",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
     fontSize: 16,
-    color: "#333",
+    color: "#11181C",
     minHeight: 100,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
   },
   singleLineTextInput: {
-    backgroundColor: "transparent",
-    borderRadius: 8,
-    padding: 12,
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingHorizontal: 14,
     fontSize: 16,
-    color: "#333",
+    color: "#11181C",
+    minHeight: 50,
     borderWidth: 1,
-    borderColor: "#ccc",
+    borderColor: "#c5ccd4",
   },
 });
