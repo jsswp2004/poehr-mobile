@@ -220,65 +220,32 @@ export default function AppointmentsScreen() {
     await loadDoctors();
     setRefreshing(false);
   };
+  // Day cells match the mock: tinted circle = has visits, red circle = blocked,
+  // solid blue circle = the selected day.
   const getMarkedDates = () => {
     const marked: any = {};
-
-    // Mark selected date
-    if (selectedDate) {
-      marked[selectedDate] = {
-        selected: true,
-        selectedColor: "#1976d2",
+    const paint = (date: string, bg: string, color: string) => {
+      marked[date] = {
+        customStyles: {
+          container: { backgroundColor: bg, borderRadius: 17, width: 34, height: 34, alignItems: "center", justifyContent: "center" },
+          text: { color, fontWeight: "600" },
+        },
       };
-    }
+    };
 
-    // Mark appointment dates
     (appointments || []).forEach((appointment) => {
-      if (appointment) {
-        let date;
-        if (appointment.appointment_datetime) {
-          // Extract date from appointment_datetime
-          date = moment(appointment.appointment_datetime).format("YYYY-MM-DD");
-        } else if (appointment.appointment_date) {
-          // Use legacy appointment_date field
-          date = moment(appointment.appointment_date).format("YYYY-MM-DD");
-        }
-
-        if (date) {
-          if (marked[date]) {
-            marked[date] = {
-              ...marked[date],
-              marked: true,
-              dotColor: "#2e7d32",
-            };
-          } else {
-            marked[date] = {
-              marked: true,
-              dotColor: "#2e7d32",
-            };
-          }
-        }
-      }
+      if (!appointment) return;
+      const raw = appointment.appointment_datetime || appointment.appointment_date;
+      if (raw) paint(moment(raw).format("YYYY-MM-DD"), "#e8f1fb", "#0d5cab");
     });
 
-    // Mark blocked dates
     (blockedDates || []).forEach((blocked) => {
       if (blocked && blocked.date) {
-        const date = moment(blocked.date).format("YYYY-MM-DD");
-        if (marked[date]) {
-          marked[date] = {
-            ...marked[date],
-            marked: true,
-            dotColor: "#c62828",
-          };
-        } else {
-          marked[date] = {
-            marked: true,
-            dotColor: "#c62828",
-          };
-        }
+        paint(moment(blocked.date).format("YYYY-MM-DD"), "#fde7e7", "#a31d1d");
       }
     });
 
+    if (selectedDate) paint(selectedDate, "#1976d2", "#ffffff");
     return marked;
   };
   const getAppointmentsForDate = (date: string) => {
@@ -514,27 +481,22 @@ export default function AppointmentsScreen() {
         <Calendar
           onDayPress={onDayPress}
           markedDates={getMarkedDates()}
+          markingType="custom"
           theme={{
-            backgroundColor: "transparent",
-            calendarBackground: "transparent",
-            textSectionTitleColor: "#b6c1cd",
-            selectedDayBackgroundColor: "#1976d2",
-            selectedDayTextColor: "#ffffff",
+            backgroundColor: "#ffffff",
+            calendarBackground: "#ffffff",
+            textSectionTitleColor: "#5b6670",
             todayTextColor: "#1976d2",
-            dayTextColor: "#2d4150",
-            textDisabledColor: "#ddd",
-            dotColor: "#00adf5",
-            selectedDotColor: "#ffffff",
+            dayTextColor: "#11181C",
+            textDisabledColor: "#c5ccd4",
             arrowColor: "#1976d2",
-            disabledArrowColor: "#ddd",
-            monthTextColor: "#2d4150",
-            indicatorColor: "#1976d2",
-            textDayFontWeight: "300",
-            textMonthFontWeight: "bold",
-            textDayHeaderFontWeight: "300",
-            textDayFontSize: 16,
-            textMonthFontSize: 16,
-            textDayHeaderFontSize: 13,
+            monthTextColor: "#11181C",
+            textDayFontWeight: "500",
+            textMonthFontWeight: "700",
+            textDayHeaderFontWeight: "600",
+            textDayFontSize: 14,
+            textMonthFontSize: 17,
+            textDayHeaderFontSize: 11,
           }}
         />
       </ThemedView>
@@ -542,13 +504,13 @@ export default function AppointmentsScreen() {
       <ThemedView style={styles.legendRow}>
         <ThemedView style={styles.legendItem}>
           <ThemedView
-            style={[styles.legendDot, { backgroundColor: "#2e7d32" }]}
+            style={[styles.legendDot, { backgroundColor: "#e8f1fb" }]}
           />
-          <ThemedText style={styles.legendText}>Has appointments</ThemedText>
+          <ThemedText style={styles.legendText}>Has visits</ThemedText>
         </ThemedView>
         <ThemedView style={styles.legendItem}>
           <ThemedView
-            style={[styles.legendDot, { backgroundColor: "#c62828" }]}
+            style={[styles.legendDot, { backgroundColor: "#fde7e7" }]}
           />
           <ThemedText style={styles.legendText}>Blocked</ThemedText>
         </ThemedView>

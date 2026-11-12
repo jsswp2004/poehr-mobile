@@ -495,6 +495,17 @@ export default function PatientsScreen() {
           <ThemedText type="title" style={styles.listTitle}>
             Patients
           </ThemedText>
+          {["doctor", "admin", "system_admin", "registrar"].includes(
+            user?.role || ""
+          ) && (
+            <TouchableOpacity
+              style={styles.registerLink}
+              onPress={() => router.push("/register-patient")}
+              accessibilityRole="button"
+            >
+              <ThemedText style={styles.registerLinkText}>+ Register</ThemedText>
+            </TouchableOpacity>
+          )}
         </ThemedView>
 
         {/* Search */}
@@ -1282,12 +1293,17 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
   },
   listHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 20,
-    paddingTop: 16,
+    paddingTop: 8,
     paddingBottom: 4,
     backgroundColor: "transparent",
   },
   listTitle: { fontSize: 24, fontWeight: "700" },
+  registerLink: { minHeight: 44, justifyContent: "center", paddingLeft: 12 },
+  registerLinkText: { fontSize: 14, fontWeight: "600", color: "#0d5cab" },
   listCountWrap: {
     paddingHorizontal: 20,
     paddingTop: 12,
