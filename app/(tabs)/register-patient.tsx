@@ -4,6 +4,8 @@ import { jwtDecode } from "jwt-decode";
 import React, { useEffect, useState } from "react";
 import {
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   StyleSheet,
   TextInput,
@@ -198,35 +200,41 @@ export default function RegisterPatientScreen() {
   }
 
   return (
-    <ThemedView style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
       <ScrollView
         style={styles.scrollView}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <ThemedView style={styles.header}>
-          <ThemedText style={styles.title}>Quick Register</ThemedText>
-          <ThemedText style={styles.subtitle}>Patient Information</ThemedText>
+          <ThemedText style={styles.title}>Register patient</ThemedText>
+          <ThemedText style={styles.subtitle}>
+            Create a patient account. Fields marked * are required.
+          </ThemedText>
         </ThemedView>
 
         <ThemedView style={styles.form}>
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>First Name</ThemedText>
+            <ThemedText style={styles.label}>First name</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.first_name}
               onChangeText={(value) => updateFormData("first_name", value)}
-              placeholder="First Name"
+              placeholder="Maria"
               autoCapitalize="words"
             />
           </ThemedView>
 
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Last Name *</ThemedText>
+            <ThemedText style={styles.label}>Last name *</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.last_name}
               onChangeText={(value) => updateFormData("last_name", value)}
-              placeholder="Last Name *"
+              placeholder="Santos"
               autoCapitalize="words"
             />
           </ThemedView>
@@ -237,7 +245,7 @@ export default function RegisterPatientScreen() {
               style={styles.input}
               value={formData.username}
               onChangeText={(value) => updateFormData("username", value)}
-              placeholder="Username *"
+              placeholder="Used to log in"
               autoCapitalize="none"
               autoCorrect={false}
             />
@@ -249,7 +257,7 @@ export default function RegisterPatientScreen() {
               style={styles.input}
               value={formData.email}
               onChangeText={(value) => updateFormData("email", value)}
-              placeholder="Email"
+              placeholder="name@example.com"
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
@@ -257,12 +265,12 @@ export default function RegisterPatientScreen() {
           </ThemedView>
 
           <ThemedView style={styles.inputGroup}>
-            <ThemedText style={styles.label}>Phone Number</ThemedText>
+            <ThemedText style={styles.label}>Phone number</ThemedText>
             <TextInput
               style={styles.input}
               value={formData.phone_number}
               onChangeText={(value) => updateFormData("phone_number", value)}
-              placeholder="Phone Number"
+              placeholder="(555) 123-4567"
               keyboardType="phone-pad"
             />
           </ThemedView>
@@ -273,7 +281,7 @@ export default function RegisterPatientScreen() {
               style={styles.input}
               value={formData.password}
               onChangeText={(value) => updateFormData("password", value)}
-              placeholder="Password *"
+              placeholder="At least 8 characters"
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
@@ -289,18 +297,19 @@ export default function RegisterPatientScreen() {
             disabled={loading}
           >
             <ThemedText style={styles.submitButtonText}>
-              {loading ? "Creating Patient Account..." : "REGISTER"}
+              {loading ? "Creating account..." : "Register patient"}
             </ThemedText>
           </TouchableOpacity>
         </ThemedView>
       </ScrollView>
-    </ThemedView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#fff",
   },
   scrollView: {
     flex: 1,
@@ -308,37 +317,42 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 20,
     paddingTop: 20,
-    paddingBottom: 10,
+    paddingBottom: 6,
+    backgroundColor: "transparent",
   },
   title: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 8,
+    fontWeight: "700",
+    marginBottom: 6,
   },
   subtitle: {
-    fontSize: 16,
-    opacity: 0.7,
+    fontSize: 14,
+    color: "#5b6670",
   },
   form: {
     paddingHorizontal: 20,
+    paddingTop: 12,
     paddingBottom: 40,
+    backgroundColor: "transparent",
   },
   inputGroup: {
-    marginBottom: 20,
+    marginBottom: 16,
+    backgroundColor: "transparent",
   },
   label: {
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: "600",
-    marginBottom: 8,
+    marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    borderColor: "#c5ccd4",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 50,
     fontSize: 16,
     backgroundColor: "#fff",
+    color: "#11181C",
   },
   textArea: {
     minHeight: 80,
@@ -346,18 +360,18 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: "#1976d2",
-    paddingVertical: 16,
-    borderRadius: 8,
+    height: 52,
+    borderRadius: 12,
     alignItems: "center",
-    marginTop: 30,
-    marginBottom: 40,
+    justifyContent: "center",
+    marginTop: 14,
   },
   submitButtonDisabled: {
-    backgroundColor: "#ccc",
+    opacity: 0.5,
   },
   submitButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
 });
