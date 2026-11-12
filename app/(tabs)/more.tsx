@@ -86,14 +86,14 @@ export default function MoreScreen() {
             <Row
               icon="person.badge.plus"
               label="Register patient"
-              onPress={() => router.push("/(tabs)/register-patient")}
+              onPress={() => router.push("/register-patient")}
             />
           )}
           {canManageAvailability && (
             <Row
               icon="clock.fill"
               label="Availability"
-              onPress={() => router.push("/(tabs)/availability")}
+              onPress={() => router.push("/availability")}
             />
           )}
         </View>
