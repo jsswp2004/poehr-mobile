@@ -1,6 +1,6 @@
 import { Tabs, router } from "expo-router";
 import React from "react";
-import { TouchableOpacity } from "react-native";
+import { Text, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { HapticTab } from "@/components/HapticTab";
@@ -22,11 +22,22 @@ const subScreenHeader = {
   headerTitleStyle: { fontSize: 18, fontWeight: "700" as const },
   headerLeft: () => (
     <TouchableOpacity
-      onPress={() => router.back()}
+      onPress={() =>
+        router.canGoBack() ? router.back() : router.replace("/(tabs)/more")
+      }
+      accessibilityRole="button"
       accessibilityLabel="Go back"
-      style={{ minWidth: 44, minHeight: 44, justifyContent: "center", paddingLeft: 16 }}
+      hitSlop={8}
+      style={{
+        minWidth: 56,
+        minHeight: 44,
+        flexDirection: "row",
+        alignItems: "center",
+        paddingLeft: 12,
+      }}
     >
-      <IconSymbol name="chevron.left" size={24} color="#0d5cab" />
+      <Text style={{ fontSize: 34, lineHeight: 36, color: "#0d5cab", marginTop: -4 }}>‹</Text>
+      <Text style={{ fontSize: 16, fontWeight: "600", color: "#0d5cab" }}>Back</Text>
     </TouchableOpacity>
   ),
 };
