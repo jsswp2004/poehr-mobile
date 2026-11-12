@@ -7,7 +7,6 @@
     "icon": "./assets/images/power-logo.png",
     "scheme": "poehrmobile",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "description": "POWER Mobile - Advanced Healthcare Management Platform",
     "platforms": [
       "ios",
@@ -17,12 +16,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.powerit.poehrmobile",
-      "buildNumber": "19",
+      "buildNumber": "20",
       "infoPlist": {
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": false,
           "NSExceptionDomains": {
-            "powerhealthcareit.com": {
+            "powerhealthit.com": {
               "NSExceptionRequiresForwardSecrecy": false,
               "NSExceptionMinimumTLSVersion": "1.0",
               "NSIncludesSubdomains": true
@@ -37,7 +36,6 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true,
       "package": "com.powerit.poehrmobile",
       "versionCode": 1,
       "permissions": [
