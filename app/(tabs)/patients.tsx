@@ -265,7 +265,9 @@ export default function PatientsScreen() {
         (patient) =>
           patient.first_name.toLowerCase().includes(query) ||
           patient.last_name.toLowerCase().includes(query) ||
-          patient.email.toLowerCase().includes(query)
+          patient.email.toLowerCase().includes(query) ||
+          (!!patient.phone_number &&
+            patient.phone_number.replace(/\D/g, "").includes(query.replace(/\D/g, "") || "\u0000"))
       );
     }
 
@@ -547,92 +549,38 @@ export default function PatientsScreen() {
         }
       >
         {/* Header */}
-        <ThemedView style={styles.header}>
-          <ThemedView style={styles.headerTitleContainer}>
-            <ThemedView style={styles.headerTitleWrapper}>
-              <ThemedText type="title" style={styles.headerTitle}>
-                Patient Management 👥
-              </ThemedText>
-            </ThemedView>
-            {(user?.role as string) !== "patient" && (
-              <>
-                <TouchableOpacity
-                  style={styles.refreshButton}
-                  onPress={loadPatients}
-                  disabled={loadingPatients}
-                >
-                  <ThemedText style={styles.refreshButtonText}>
-                    {loadingPatients ? "🔄 Loading..." : "🔄 Refresh"}
-                  </ThemedText>
-                </TouchableOpacity>
-                {/* Export Button 
-                <TouchableOpacity
-                  style={styles.exportButton}
-                  onPress={exportToCSV}
-                >
-                  <ThemedText style={styles.exportButtonText}>
-                    Export CSV
-                  </ThemedText>
-                </TouchableOpacity>
-                */}
-              </>
-            )}
-          </ThemedView>
+        <ThemedView style={styles.listHeader}>
+          <ThemedText type="title" style={styles.listTitle}>
+            Patients
+          </ThemedText>
         </ThemedView>
 
-        {/* Search and Filter Controls */}
+        {/* Search */}
         <ThemedView style={styles.searchContainer}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name or email..."
+            placeholder="Search by name, email or phone"
             value={searchQuery}
             onChangeText={setSearchQuery}
-            placeholderTextColor="#999"
+            placeholderTextColor="#8b95a0"
+            autoCapitalize="none"
+            autoCorrect={false}
+            clearButtonMode="while-editing"
           />
-
-          {/* <View style={styles.filterContainer}>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                genderFilter === "all" && styles.filterButtonActive,
-              ]}
-              onPress={() => setGenderFilter("all")}
-            >
-              <ThemedText style={styles.filterButtonText}>All</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                genderFilter === "male" && styles.filterButtonActive,
-              ]}
-              onPress={() => setGenderFilter("male")}
-            >
-              <ThemedText style={styles.filterButtonText}>Male</ThemedText>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[
-                styles.filterButton,
-                genderFilter === "female" && styles.filterButtonActive,
-              ]}
-              onPress={() => setGenderFilter("female")}
-            >
-              <ThemedText style={styles.filterButtonText}>Female</ThemedText>
-            </TouchableOpacity>
-          </View>*/}
         </ThemedView>
 
-        {/* Patient Count */}
-        <ThemedView style={styles.statsContainer}>
-          <ThemedText style={styles.statsText}>
+        {/* Count */}
+        <ThemedView style={styles.listCountWrap}>
+          <ThemedText style={styles.listCount}>
             {loadingPatients
               ? "Loading patients..."
-              : `Showing ${filteredPatients.length} of ${patients.length} patients`}
+              : searchQuery.trim()
+              ? `${filteredPatients.length} of ${patients.length} patients`
+              : `${patients.length} patients`}
           </ThemedText>
           {!loadingPatients && patients.length === 0 && (
-            <TouchableOpacity style={styles.retryButton} onPress={loadPatients}>
-              <ThemedText style={styles.retryButtonText}>
-                🔄 Retry Loading Patients
-              </ThemedText>
+            <TouchableOpacity onPress={loadPatients}>
+              <ThemedText style={styles.listRetry}>Retry loading</ThemedText>
             </TouchableOpacity>
           )}
         </ThemedView>
@@ -643,72 +591,65 @@ export default function PatientsScreen() {
             <ThemedText>Loading patients...</ThemedText>
           </ThemedView>
         ) : filteredPatients.length > 0 ? (
-          <ThemedView style={styles.patientListContainer}>
-            {filteredPatients.map((patient) => (
-              <TouchableOpacity
-                key={patient.id}
-                style={styles.patientItem}
-                onPress={() => {
-                  setSelectedPatient(patient);
-                  setShowPatientModal(true);
-                  setIsEditingPatient(false);
-                  setEditedPatient(null);
-                }}
-              >
-                <ThemedView style={styles.patientInfo}>
-                  <ThemedText style={styles.patientName}>
-                    {patient.first_name} {patient.last_name}
-                  </ThemedText>
-                  <ThemedText style={styles.patientEmail}>
-                    {patient.email}
-                  </ThemedText>
-                  {patient.phone_number && (
-                    <ThemedText style={styles.patientPhone}>
-                      {patient.phone_number}
+          <ThemedView style={styles.listWrap}>
+            {filteredPatients.map((patient) => {
+              const initials = `${patient.first_name?.[0] || ""}${
+                patient.last_name?.[0] || ""
+              }`.toUpperCase();
+              const details = [
+                patient.date_of_birth
+                  ? `${moment().diff(moment(patient.date_of_birth), "years")} yrs`
+                  : null,
+                patient.gender
+                  ? patient.gender.charAt(0).toUpperCase() +
+                    patient.gender.slice(1)
+                  : null,
+                patient.last_appointment_date
+                  ? `Last visit ${moment(patient.last_appointment_date).format(
+                      "MMM YYYY"
+                    )}`
+                  : "No visits yet",
+              ]
+                .filter(Boolean)
+                .join(" · ");
+              return (
+                <TouchableOpacity
+                  key={patient.id}
+                  style={styles.listRow}
+                  accessibilityRole="button"
+                  onPress={() => {
+                    setSelectedPatient(patient);
+                    setShowPatientModal(true);
+                    setIsEditingPatient(false);
+                    setEditedPatient(null);
+                  }}
+                >
+                  <ThemedView style={styles.listAvatar}>
+                    <ThemedText style={styles.listAvatarText}>
+                      {initials}
                     </ThemedText>
-                  )}
-                  {patient.date_of_birth && (
-                    <ThemedText style={styles.patientAge}>
-                      Age:{" "}
-                      {moment().diff(moment(patient.date_of_birth), "years")}{" "}
-                      years
+                  </ThemedView>
+                  <ThemedView style={styles.listBody}>
+                    <ThemedText style={styles.listName}>
+                      {patient.first_name} {patient.last_name}
                     </ThemedText>
-                  )}
-                </ThemedView>
-                <ThemedView style={styles.patientMeta}>
-                  {patient.gender && (
-                    <ThemedText style={styles.patientGender}>
-                      {patient.gender.charAt(0).toUpperCase() +
-                        patient.gender.slice(1)}
+                    <ThemedText style={styles.listMeta}>
+                      {patient.phone_number || patient.email}
                     </ThemedText>
-                  )}
-                  <ThemedText style={styles.patientId}>
-                    ID: {patient.id}
-                  </ThemedText>
-                  <ThemedText style={styles.patientRegistered}>
-                    {patient.last_appointment_date
-                      ? `Last visit: ${moment(
-                          patient.last_appointment_date
-                        ).format("MMM YYYY")}`
-                      : "No visits yet"}
-                  </ThemedText>
-                </ThemedView>
-              </TouchableOpacity>
-            ))}
+                    <ThemedText style={styles.listMeta}>{details}</ThemedText>
+                  </ThemedView>
+                  <ThemedText style={styles.listChevron}>›</ThemedText>
+                </TouchableOpacity>
+              );
+            })}
           </ThemedView>
         ) : (
           <ThemedView style={styles.emptyContainer}>
             <ThemedText style={styles.emptyText}>
-              {searchQuery || genderFilter !== "all"
-                ? "No patients found matching your search criteria"
+              {searchQuery
+                ? "No patients match your search"
                 : "No patients found"}
             </ThemedText>
-            {patients.length === 0 && (
-              <ThemedText style={styles.emptySubtext}>
-                This could mean the endpoint is not available or there are no
-                patients in the system.
-              </ThemedText>
-            )}
           </ThemedView>
         )}
       </ScrollView>
@@ -1020,7 +961,7 @@ export default function PatientsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#fff",
   },
   scrollView: {
     flex: 1,
@@ -1078,19 +1019,19 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   searchContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 8,
     backgroundColor: "#fff",
-    marginTop: 10,
   },
   searchInput: {
-    backgroundColor: "#f5f5f5",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
+    backgroundColor: "#f5f7fa",
+    paddingHorizontal: 14,
+    height: 46,
+    borderRadius: 12,
     fontSize: 16,
-    color: "#333",
+    color: "#11181C",
     borderWidth: 1,
-    borderColor: "#ddd",
+    borderColor: "#c5ccd4",
   },
   filterContainer: {
     flexDirection: "row",
@@ -1378,4 +1319,51 @@ const styles = StyleSheet.create({
     minHeight: 80,
     textAlignVertical: "top",
   },
+  listHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 4,
+    backgroundColor: "transparent",
+  },
+  listTitle: { fontSize: 24, fontWeight: "700" },
+  listCountWrap: {
+    paddingHorizontal: 20,
+    paddingTop: 12,
+    paddingBottom: 4,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    backgroundColor: "transparent",
+  },
+  listCount: {
+    fontSize: 12,
+    fontWeight: "600",
+    color: "#5b6670",
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+  },
+  listRetry: { color: "#1976d2", fontWeight: "600" },
+  listWrap: { paddingHorizontal: 20, paddingBottom: 32, backgroundColor: "transparent" },
+  listRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    minHeight: 68,
+    paddingVertical: 10,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: "#e3e8ee",
+  },
+  listAvatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#e3effc",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  listAvatarText: { color: "#0d5cab", fontWeight: "700", fontSize: 15 },
+  listBody: { flex: 1, backgroundColor: "transparent" },
+  listName: { fontSize: 16, fontWeight: "600" },
+  listMeta: { fontSize: 12, color: "#5b6670", marginTop: 1 },
+  listChevron: { fontSize: 26, color: "#8b95a0" },
 });
