@@ -24,6 +24,7 @@ const MAPPING = {
   "clock.fill": "schedule",
   "list.bullet": "format-list-bulleted",
   ellipsis: "more-horiz",
+  "rectangle.portrait.and.arrow.right": "logout",
 } as IconMapping;
 
 /**

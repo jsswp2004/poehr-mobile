@@ -1,6 +1,9 @@
 import { API_BASE_URL } from "@/config/api";
+import { IconSymbol } from "@/components/ui/IconSymbol";
 import { STAFF_ROLES, useCurrentUser } from "@/hooks/useCurrentUser";
+import { confirmLogout } from "@/utils/logout";
 import { tokenStore } from "@/utils/tokenStore";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
@@ -168,6 +171,25 @@ export default function HomeScreen() {
       : `In ${Math.floor(minsAway / 60)} h ${minsAway % 60} min`;
 
   return (
+    <View style={styles.root}>
+      <View style={styles.brandRow}>
+        <View style={styles.brandLeft}>
+          <Image
+            source={require("@/assets/images/power-logo.png")}
+            style={styles.brandLogo}
+            contentFit="contain"
+          />
+          <Text style={styles.brandName}>POWER Scheduler</Text>
+        </View>
+        <TouchableOpacity
+          onPress={confirmLogout}
+          accessibilityRole="button"
+          accessibilityLabel="Log out"
+          style={styles.logoutBtn}
+        >
+          <IconSymbol name="rectangle.portrait.and.arrow.right" size={22} color="#5b6670" />
+        </TouchableOpacity>
+      </View>
     <ScrollView
       style={styles.screen}
       contentContainerStyle={styles.content}
@@ -278,6 +300,7 @@ export default function HomeScreen() {
         </>
       )}
     </ScrollView>
+    </View>
   );
 }
 
@@ -286,6 +309,19 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingBottom: 40 },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
   date: { fontSize: 13, color: "#5b6670", fontWeight: "500" },
+  root: { flex: 1, backgroundColor: "#fff" },
+  brandRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    height: 56,
+    paddingLeft: 20,
+    paddingRight: 8,
+  },
+  brandLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+  brandLogo: { width: 34, height: 34 },
+  brandName: { fontSize: 15, fontWeight: "600", color: "#11181C" },
+  logoutBtn: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   greeting: { fontSize: 26, fontWeight: "700", color: "#11181C", marginTop: 2 },
   org: { fontSize: 13, color: "#5b6670", marginTop: 4 },
   stats: { flexDirection: "row", gap: 10, marginTop: 18 },

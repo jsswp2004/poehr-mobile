@@ -1,6 +1,6 @@
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { tokenStore } from "@/utils/tokenStore";
+import { confirmLogout } from "@/utils/logout";
 import Constants from "expo-constants";
 import { router } from "expo-router";
 import React from "react";
@@ -28,24 +28,7 @@ export default function MoreScreen() {
     user?.lastName?.[0] || ""
   }`.toUpperCase();
 
-  const logout = () => {
-    Alert.alert("Log out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
-      {
-        text: "Log out",
-        style: "destructive",
-        onPress: async () => {
-          try {
-            await tokenStore.removeItem("access_token");
-            await tokenStore.removeItem("refresh_token");
-            router.replace("/login");
-          } catch {
-            Alert.alert("Error", "Failed to log out. Please try again.");
-          }
-        },
-      },
-    ]);
-  };
+  const logout = confirmLogout;
 
   const Row = ({
     icon,
