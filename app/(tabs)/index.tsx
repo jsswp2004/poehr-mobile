@@ -1,49 +1,86 @@
-import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { API_BASE_URL } from "@/config/api";
+import { STAFF_ROLES, useCurrentUser } from "@/hooks/useCurrentUser";
 import { tokenStore } from "@/utils/tokenStore";
-import { Image } from "expo-image";
 import { router } from "expo-router";
 import moment from "moment";
-import React, { useEffect, useState } from "react";
-import { Alert, StyleSheet, TouchableOpacity } from "react-native";
-
-import ParallaxScrollView from "@/components/ParallaxScrollView";
-import { ThemedText } from "@/components/ThemedText";
-import { ThemedView } from "@/components/ThemedView";
-import { API_BASE_URL } from "@/config/api";
+import React, { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
+  RefreshControl,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 interface Appointment {
   id: number;
-  patient_name: string;
-  doctor_name: string;
-  appointment_date?: string; // Keep for backward compatibility
-  appointment_time?: string; // Keep for backward compatibility
-  appointment_datetime?: string; // New field from backend
-  duration: number;
+  title?: string;
+  patient_name?: string;
+  doctor_name?: string;
+  provider_name?: string;
+  appointment_date?: string;
+  appointment_time?: string;
+  appointment_datetime?: string;
+  duration_minutes?: number;
+  duration?: number;
   status: string;
+  arrived?: boolean;
+}
+
+const STATUS_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  scheduled: { bg: "#e3effc", fg: "#0d5cab", label: "Scheduled" },
+  pending: { bg: "#fdf0dc", fg: "#8a4b00", label: "Pending" },
+  in_progress: { bg: "#e3f4e6", fg: "#1b6b2a", label: "In progress" },
+  completed: { bg: "#eceff2", fg: "#3d4852", label: "Completed" },
+  no_show: { bg: "#fde7e7", fg: "#a31d1d", label: "No show" },
+  cancelled: { bg: "#eceff2", fg: "#3d4852", label: "Cancelled" },
+};
+
+const DONE_STATUSES = ["completed", "cancelled", "no_show"];
+
+// The backend sends either appointment_datetime or the older date/time pair.
+const startOf = (a: Appointment): moment.Moment | null => {
+  if (a.appointment_datetime) {
+    const m = moment(a.appointment_datetime);
+    return m.isValid() ? m : null;
+  }
+  if (a.appointment_date && a.appointment_time) {
+    const m = moment(`${a.appointment_date} ${a.appointment_time}`, [
+      "YYYY-MM-DD HH:mm:ss",
+      "YYYY-MM-DD HH:mm",
+    ]);
+    return m.isValid() ? m : null;
+  }
+  return null;
+};
+
+function greeting() {
+  const h = moment().hour();
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  return "Good evening";
 }
 
 export default function HomeScreen() {
   const { user, loading } = useCurrentUser();
-  const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user) {
-      loadTodayAppointments();
-    }
-  }, [user]);
+  const isPatient = user?.role === "patient";
+  const isStaff = !!user && STAFF_ROLES.includes(user.role);
+  const canRegister =
+    !!user &&
+    ["doctor", "admin", "system_admin", "registrar"].includes(user.role);
 
-  // Always show the POWER logo. (Name-based logo matching used to send
-  // "clinic"/"health" organizations to adaptive-icon.png, which is just the
-  // Expo template placeholder.)
-  const getOrganizationLogo = () => require("@/assets/images/power-logo.png");
-
-  const loadTodayAppointments = async () => {
-    setLoadingAppointments(true);
+  const loadToday = useCallback(async () => {
+    setError(null);
     try {
       const token = await tokenStore.getItem("access_token");
       if (!token) return;
-
       const today = moment().format("YYYY-MM-DD");
       const response = await fetch(
         `${API_BASE_URL}/api/appointments/?date=${today}`,
@@ -54,499 +91,228 @@ export default function HomeScreen() {
           },
         }
       );
-
-      if (response.ok) {
-        const data = await response.json();
-        console.log("📅 Today's appointments data:", data);
-        console.log("📅 First appointment sample:", data[0]);
-        if (data[0]) {
-          console.log("📅 appointment_time value:", data[0].appointment_time);
-          console.log(
-            "📅 appointment_datetime value:",
-            data[0].appointment_datetime
-          );
-          console.log(
-            "📅 appointment_time type:",
-            typeof data[0].appointment_time
-          );
-          console.log(
-            "📅 appointment_datetime type:",
-            typeof data[0].appointment_datetime
-          );
-        }
-
-        // Filter appointments for today's date
-        const filteredAppointments = data.filter((appointment: any) => {
-          if (!appointment) return false;
-
-          let appointmentDate;
-          if (appointment.appointment_datetime) {
-            // Extract date from appointment_datetime (format: 2025-08-31T19:30:00+00:00)
-            appointmentDate = moment(appointment.appointment_datetime).format(
-              "YYYY-MM-DD"
-            );
-            console.log(
-              `🔍 Appointment ${appointment.id}: datetime=${appointment.appointment_datetime}, extracted date=${appointmentDate}`
-            );
-          } else if (appointment.appointment_date) {
-            // Use legacy appointment_date field
-            appointmentDate = moment(appointment.appointment_date).format(
-              "YYYY-MM-DD"
-            );
-            console.log(
-              `🔍 Appointment ${appointment.id}: legacy date=${appointment.appointment_date}, formatted=${appointmentDate}`
-            );
-          } else {
-            console.log(
-              `🔍 Appointment ${appointment.id}: no date field found`
-            );
-            return false;
-          }
-
-          const matches = appointmentDate === today;
-          console.log(
-            `🔍 Appointment ${appointment.id}: ${appointmentDate} === ${today} ? ${matches}`
-          );
-          return matches;
-        });
-
-        console.log(
-          "🔍 Filtered appointments for today:",
-          filteredAppointments.length
-        );
-        setTodayAppointments(filteredAppointments);
-      } else {
-        console.log("Failed to load appointments:", response.status);
+      if (!response.ok) {
+        setError("Could not load today's appointments.");
+        return;
       }
-    } catch (error) {
-      console.log("Error loading appointments:", error);
-    } finally {
-      setLoadingAppointments(false);
+      const data = await response.json();
+      const list: Appointment[] = Array.isArray(data) ? data : data.results || [];
+      // Keep only today in the phone's own time zone, soonest first.
+      const todays = list
+        .filter((a) => {
+          const m = a && startOf(a);
+          return !!m && m.isSame(moment(), "day");
+        })
+        .sort((a, b) => startOf(a)!.valueOf() - startOf(b)!.valueOf());
+      setAppointments(todays);
+    } catch {
+      setError("Network error. Pull down to try again.");
     }
-  };
+  }, []);
 
-  const clearAuthForTesting = async () => {
-    Alert.alert(
-      "Clear Authentication",
-      "This will log you out so you can test registration. Continue?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Continue",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await tokenStore.multiRemove(["access_token", "refresh_token"]);
-              router.replace("/login");
-            } catch (error) {
-              console.error("🚪 Error during auth clear:", error);
-            }
-          },
-        },
-      ]
-    );
+  useEffect(() => {
+    if (!user) return;
+    setLoadingAppointments(true);
+    loadToday().finally(() => setLoadingAppointments(false));
+  }, [user, loadToday]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await loadToday();
+    setRefreshing(false);
   };
 
   if (loading) {
     return (
-      <ParallaxScrollView
-        headerBackgroundColor={{ light: "#e3f2fd", dark: "#e3f2fd" }}
-        headerImage={
-          <Image
-            source={require("@/assets/images/power-logo.png")}
-            style={styles.organizationLogo}
-          />
-        }
-      >
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">Loading...</ThemedText>
-        </ThemedView>
-      </ParallaxScrollView>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#1976d2" />
+      </View>
     );
   }
 
+  const now = moment();
+  const open = appointments.filter((a) => !DONE_STATUSES.includes(a.status));
+  // "Up next" is the first open visit that hasn't ended yet.
+  const upcoming = open.filter((a) => {
+    const s = startOf(a)!;
+    const end = s.clone().add(a.duration_minutes || a.duration || 30, "minutes");
+    return end.isAfter(now);
+  });
+  const next = upcoming[0];
+  const later = upcoming.slice(1, 4);
+  const checkedIn = appointments.filter(
+    (a) => a.arrived || a.status === "in_progress"
+  ).length;
+
+  const personName = (a: Appointment) =>
+    isPatient
+      ? `Dr. ${a.doctor_name || a.provider_name || "—"}`
+      : a.patient_name || "Unknown patient";
+
+  const chip = (status: string) => {
+    const st = STATUS_STYLE[status] || STATUS_STYLE.scheduled;
+    return (
+      <Text style={[styles.chip, { backgroundColor: st.bg, color: st.fg }]}>
+        {st.label}
+      </Text>
+    );
+  };
+
+  const nextStart = next ? startOf(next)! : null;
+  const minsAway = nextStart ? nextStart.diff(now, "minutes") : 0;
+  const awayLabel =
+    minsAway <= 0
+      ? "Now"
+      : minsAway < 60
+      ? `In ${minsAway} min`
+      : `In ${Math.floor(minsAway / 60)} h ${minsAway % 60} min`;
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: "#e3f2fd", dark: "#e3f2fd" }}
-      headerImage={
-        <Image source={getOrganizationLogo()} style={styles.organizationLogo} />
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <ThemedView style={styles.header}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="title">POWER Scheduler</ThemedText>
-        </ThemedView>
-      </ThemedView>
+      <Text style={styles.date}>{moment().format("dddd, MMM D")}</Text>
+      <Text style={styles.greeting}>
+        {greeting()}, {user?.firstName || user?.username}
+      </Text>
+      {!!user?.organization && <Text style={styles.org}>{user.organization}</Text>}
 
-      <ThemedView style={styles.userInfo}>
-        <ThemedText type="subtitle">
-          Welcome, {user?.firstName || user?.username}! 👋
-        </ThemedText>
-        <ThemedText>Role: {user?.role}</ThemedText>
-        <ThemedText>
-          Organization: {user?.organization || "Unknown Organization"}
-        </ThemedText>
-        {/*<ThemedText>Email: {user?.email}</ThemedText>*/}
-      </ThemedView>
+      {!isPatient && (
+        <View style={styles.stats}>
+          <View style={styles.stat}>
+            <Text style={[styles.statNum, { color: "#1976d2" }]}>
+              {appointments.length}
+            </Text>
+            <Text style={styles.statLabel}>Today</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={[styles.statNum, { color: "#1b6b2a" }]}>{checkedIn}</Text>
+            <Text style={styles.statLabel}>Checked in</Text>
+          </View>
+          <View style={styles.stat}>
+            <Text style={styles.statNum}>{upcoming.length}</Text>
+            <Text style={styles.statLabel}>Remaining</Text>
+          </View>
+        </View>
+      )}
 
-      {/*<ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">🎉 Phase 1 Complete!</ThemedText>
-        <ThemedText>
-          Authentication system is working! You have successfully:
-        </ThemedText>
-        <ThemedText>• ✅ Logged in with JWT tokens</ThemedText>
-        <ThemedText>• ✅ Stored tokens in encrypted storage</ThemedText>
-        <ThemedText>• ✅ Role-based authentication</ThemedText>
-        <ThemedText>• ✅ Protected routes</ThemedText>
-      </ThemedView>*/}
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">📅 Today&apos;s Appointments</ThemedText>
-        {loadingAppointments ? (
-          <ThemedText>Loading appointments...</ThemedText>
-        ) : todayAppointments.length > 0 ? (
-          <>
-            <ThemedText>
-              You have {todayAppointments.length} appointment(s) today:
-            </ThemedText>
-            {todayAppointments.slice(0, 3).map((appointment) => {
-              // Handle both old format (appointment_time) and new format (appointment_datetime)
-              let displayTime = "Time not set";
-
-              if (appointment.appointment_datetime) {
-                // New format: parse appointment_datetime
-                try {
-                  const datetime = moment(appointment.appointment_datetime);
-                  if (datetime.isValid()) {
-                    displayTime = datetime.format("h:mm A");
-                  }
-                } catch (error) {
-                  console.log("Error parsing appointment_datetime:", error);
-                }
-              } else if (appointment.appointment_time) {
-                // Old format: parse appointment_time
-                try {
-                  const time = moment(appointment.appointment_time, [
-                    "HH:mm:ss",
-                    "HH:mm",
-                    "YYYY-MM-DDTHH:mm:ss",
-                    "YYYY-MM-DD HH:mm:ss",
-                  ]);
-                  if (time.isValid()) {
-                    displayTime = time.format("h:mm A");
-                  }
-                } catch (error) {
-                  console.log("Error parsing appointment_time:", error);
-                }
-              }
-
-              return (
-                <ThemedView key={appointment.id} style={styles.appointmentItem}>
-                  <ThemedText style={styles.appointmentTime}>
-                    {displayTime}
-                  </ThemedText>
-                  <ThemedText>
-                    {user?.role === "patient"
-                      ? `Dr. ${appointment.doctor_name}`
-                      : appointment.patient_name}
-                  </ThemedText>
-                  <ThemedText style={styles.appointmentStatus}>
-                    {appointment.status.toUpperCase()}
-                  </ThemedText>
-                </ThemedView>
-              );
-            })}
-            {todayAppointments.length > 3 && (
-              <TouchableOpacity
-                style={styles.viewAllButton}
-                onPress={() => router.push("/(tabs)/appointments")}
-              >
-                <ThemedText style={styles.viewAllButtonText}>
-                  View all {todayAppointments.length} appointments
-                </ThemedText>
-              </TouchableOpacity>
-            )}
-          </>
-        ) : (
-          <ThemedText>No appointments scheduled for today</ThemedText>
-        )}
-      </ThemedView>
-
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Quick Actions</ThemedText>
+      <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.menuItem}
+          style={[styles.action, styles.actionPrimary]}
           onPress={() => router.push("/(tabs)/appointments")}
         >
-          <ThemedText>📅 Appointments</ThemedText>
+          <Text style={styles.actionPrimaryText}>
+            {isPatient ? "My appointments" : "New visit"}
+          </Text>
         </TouchableOpacity>
-
-        {(user?.role === "doctor" ||
-          user?.role === "admin" ||
-          user?.role === "system_admin") && (
+        {canRegister && (
           <TouchableOpacity
-            style={styles.menuItem}
-            onPress={() => router.push("/(tabs)/availability")}
+            style={[styles.action, styles.actionSecondary]}
+            onPress={() => router.push("/register-patient")}
           >
-            <ThemedText>🗓️ Availability</ThemedText>
+            <Text style={styles.actionSecondaryText}>Register patient</Text>
           </TouchableOpacity>
         )}
+      </View>
 
-        {user?.role === "patient" && (
-          <TouchableOpacity style={styles.menuItem}>
-            <ThemedText>👤 My Profile (Coming Soon)</ThemedText>
-          </TouchableOpacity>
-        )}
-
-        {(user?.role === "doctor" ||
-          user?.role === "admin" ||
-          user?.role === "system_admin" ||
-          user?.role === "registrar") && (
-          <>
+      <Text style={styles.section}>Up next</Text>
+      {loadingAppointments ? (
+        <ActivityIndicator style={{ marginTop: 12 }} color="#1976d2" />
+      ) : error ? (
+        <Text style={styles.muted}>{error}</Text>
+      ) : next && nextStart ? (
+        <View style={styles.nextCard}>
+          <View style={styles.nextTop}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.nextTime}>{nextStart.format("h:mm A")}</Text>
+              <Text style={styles.nextName}>{personName(next)}</Text>
+              <Text style={styles.nextMeta}>
+                {[next.title, `${next.duration_minutes || next.duration || 30} min`]
+                  .filter(Boolean)
+                  .join(" · ")}
+              </Text>
+            </View>
+            <Text style={styles.awayChip}>{awayLabel}</Text>
+          </View>
+          {isStaff && (
             <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push("/(tabs)/patients")}
+              style={styles.nextBtn}
+              onPress={() => router.push("/(tabs)/my-schedule")}
             >
-              <ThemedText>👥 Patients</ThemedText>
+              <Text style={styles.nextBtnText}>Open My Day</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.menuItem}
-              onPress={() => router.push("/register-patient")}
-            >
-              <ThemedText>➕ Register New Patient</ThemedText>
-            </TouchableOpacity>
-          </>
-        )}
+          )}
+        </View>
+      ) : (
+        <Text style={styles.muted}>
+          {appointments.length ? "No more appointments today." : "No appointments scheduled for today."}
+        </Text>
+      )}
 
-        {/*<TouchableOpacity style={styles.menuItem} onPress={clearAuthForTesting}>
-          <ThemedText>🧪 Test Registration (Clear Auth)</ThemedText>
-        </TouchableOpacity>
-                    <TouchableOpacity style={styles.menuItem}>
-              <ThemedText>📊 Reports (Coming Soon)</ThemedText>
-            </TouchableOpacity>*/}
-      </ThemedView>
-    </ParallaxScrollView>
+      {later.length > 0 && (
+        <>
+          <View style={styles.sectionRow}>
+            <Text style={styles.section}>Later today</Text>
+            <TouchableOpacity
+              onPress={() =>
+                router.push(isStaff ? "/(tabs)/my-schedule" : "/(tabs)/appointments")
+              }
+            >
+              <Text style={styles.seeAll}>See all</Text>
+            </TouchableOpacity>
+          </View>
+          {later.map((a) => (
+            <View key={a.id} style={styles.row}>
+              <Text style={styles.rowTime}>{startOf(a)!.format("h:mm A")}</Text>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.rowName}>{personName(a)}</Text>
+                {!!a.title && <Text style={styles.rowMeta}>{a.title}</Text>}
+              </View>
+              {chip(a.status)}
+            </View>
+          ))}
+        </>
+      )}
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 20,
-  },
-  titleContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-  },
-  userInfo: {
-    padding: 20,
-    marginBottom: 20,
-    borderRadius: 10,
-    backgroundColor: "transparent",
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 16,
-  },
-  menuItem: {
-    padding: 15,
-    marginVertical: 5,
-    borderRadius: 8,
-    backgroundColor: "transparent",
-  },
-  appointmentItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 10,
-    marginVertical: 3,
-    borderRadius: 6,
-    backgroundColor: "#e8f5e9",
-    borderLeftWidth: 3,
-    borderLeftColor: "#2e7d32",
-  },
-  appointmentTime: {
-    fontWeight: "bold",
-    fontSize: 14,
-  },
-  appointmentStatus: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#1976d2",
-  },
-  viewAllButton: {
-    backgroundColor: "#1976d2",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 5,
-    marginTop: 10,
-    alignSelf: "center",
-  },
-  viewAllButtonText: {
-    color: "white",
-    fontWeight: "bold",
-  },
-  organizationLogo: {
-    width: "100%",
-    height: "80%",
-    position: "absolute",
-    top: 0,
-    left: 0,
-    marginTop: 25,
-    marginBottom: 25, // Adjust based on your header height
-    resizeMode: "center",
-    borderRadius: 10, // Optional: add some border radius for aesthetics
-  },
-  // Patient List Styles
-  sectionHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 15,
-  },
-  exportButton: {
-    backgroundColor: "#2e7d32",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
-  },
-  exportButtonText: {
-    color: "white",
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  searchContainer: {
-    marginBottom: 15,
-  },
-  searchInput: {
-    backgroundColor: "#fff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 10,
-    fontSize: 16,
-    color: "#333",
-  },
-  filterContainer: {
-    flexDirection: "row",
-    gap: 10,
-  },
-  filterButton: {
-    backgroundColor: "#eee",
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  filterButtonActive: {
-    backgroundColor: "#1976d2",
-  },
-  filterButtonText: {
-    fontSize: 12,
-    fontWeight: "bold",
-  },
-  patientList: {
-    maxHeight: 300,
-  },
-  patientItem: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    marginVertical: 4,
-    borderRadius: 8,
-    backgroundColor: "transparent",
-    borderLeftWidth: 3,
-    borderLeftColor: "#1976d2",
-  },
-  patientInfo: {
-    flex: 1,
-  },
-  patientName: {
-    fontSize: 16,
-    fontWeight: "bold",
-    marginBottom: 2,
-  },
-  patientEmail: {
-    fontSize: 14,
-    opacity: 0.8,
-    marginBottom: 2,
-  },
-  patientPhone: {
-    fontSize: 12,
-    opacity: 0.7,
-  },
-  patientMeta: {
-    alignItems: "flex-end",
-  },
-  patientGender: {
-    fontSize: 12,
-    fontWeight: "bold",
-    color: "#6a1b9a",
-    marginBottom: 2,
-  },
-  patientId: {
-    fontSize: 10,
-    opacity: 0.6,
-  },
-  morePatients: {
-    textAlign: "center",
-    fontStyle: "italic",
-    opacity: 0.7,
-    marginTop: 10,
-  },
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  closeButton: {
-    padding: 10,
-  },
-  closeButtonText: {
-    fontSize: 18,
-    fontWeight: "bold",
-    color: "#666",
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  detailSection: {
-    marginBottom: 25,
-  },
-  detailRow: {
-    flexDirection: "row",
-    marginBottom: 8,
-    alignItems: "flex-start",
-  },
-  detailLabel: {
-    fontWeight: "bold",
-    width: 120,
-    color: "#666",
-  },
-  detailValue: {
-    flex: 1,
-    color: "#333",
-  },
-  medicalHistory: {
-    backgroundColor: "#f5f5f5",
-    padding: 15,
-    borderRadius: 8,
-    marginTop: 8,
-    color: "#333",
-    lineHeight: 20,
-  },
+  screen: { flex: 1, backgroundColor: "#fff" },
+  content: { padding: 20, paddingBottom: 40 },
+  center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#fff" },
+  date: { fontSize: 13, color: "#5b6670", fontWeight: "500" },
+  greeting: { fontSize: 26, fontWeight: "700", color: "#11181C", marginTop: 2 },
+  org: { fontSize: 13, color: "#5b6670", marginTop: 4 },
+  stats: { flexDirection: "row", gap: 10, marginTop: 18 },
+  stat: { flex: 1, backgroundColor: "#f5f7fa", borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14 },
+  statNum: { fontSize: 24, fontWeight: "700", color: "#11181C" },
+  statLabel: { fontSize: 12, color: "#5b6670", fontWeight: "500" },
+  actions: { flexDirection: "row", gap: 8, marginTop: 14 },
+  action: { flex: 1, minHeight: 44, borderRadius: 12, alignItems: "center", justifyContent: "center" },
+  actionPrimary: { backgroundColor: "#1976d2" },
+  actionPrimaryText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  actionSecondary: { backgroundColor: "#e8f1fb" },
+  actionSecondaryText: { color: "#0d5cab", fontWeight: "600", fontSize: 14 },
+  section: { fontSize: 13, fontWeight: "600", color: "#5b6670", letterSpacing: 0.5, textTransform: "uppercase", marginTop: 22, marginBottom: 8 },
+  sectionRow: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between" },
+  seeAll: { color: "#0d5cab", fontWeight: "600", fontSize: 13, paddingVertical: 8 },
+  muted: { color: "#666", fontSize: 15, marginTop: 4 },
+  nextCard: { borderWidth: 1.5, borderColor: "#1976d2", backgroundColor: "#f7fbff", borderRadius: 16, padding: 16 },
+  nextTop: { flexDirection: "row", alignItems: "flex-start" },
+  nextTime: { fontSize: 22, fontWeight: "700", color: "#1976d2" },
+  nextName: { fontSize: 16, fontWeight: "600", color: "#11181C", marginTop: 2 },
+  nextMeta: { fontSize: 13, color: "#5b6670", marginTop: 2 },
+  awayChip: { backgroundColor: "#e3effc", color: "#0d5cab", fontSize: 12, fontWeight: "600", paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, overflow: "hidden" },
+  nextBtn: { marginTop: 12, minHeight: 44, borderRadius: 10, backgroundColor: "#1976d2", alignItems: "center", justifyContent: "center" },
+  nextBtnText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  row: { flexDirection: "row", alignItems: "center", gap: 14, borderWidth: 1, borderColor: "#e3e8ee", borderRadius: 14, paddingVertical: 11, paddingHorizontal: 14, marginBottom: 8 },
+  rowTime: { width: 64, fontSize: 14, fontWeight: "700", color: "#1976d2" },
+  rowName: { fontSize: 15, fontWeight: "600", color: "#11181C" },
+  rowMeta: { fontSize: 12, color: "#5b6670" },
+  chip: { fontSize: 11, fontWeight: "600", paddingHorizontal: 9, paddingVertical: 3, borderRadius: 10, overflow: "hidden" },
 });

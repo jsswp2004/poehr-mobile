@@ -8,6 +8,9 @@ import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
 import { STAFF_ROLES, useCurrentUser } from "@/hooks/useCurrentUser";
 
+// Five tabs: Home, My Day (staff), Calendar, Patients, More.
+// Register patient and Availability are still real routes, reached from
+// Home and More, so they are hidden from the tab bar (href: null).
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { user } = useCurrentUser();
@@ -43,11 +46,11 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="register-patient"
+        name="appointments"
         options={{
-          title: "Register",
+          title: "Calendar",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="person.badge.plus" color={color} />
+            <IconSymbol size={28} name="calendar" color={color} />
           ),
         }}
       />
@@ -61,23 +64,16 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="appointments"
+        name="more"
         options={{
-          title: "Appointments",
+          title: "More",
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="calendar" color={color} />
+            <IconSymbol size={28} name="ellipsis" color={color} />
           ),
         }}
       />
-      <Tabs.Screen
-        name="availability"
-        options={{
-          title: "Availability",
-          tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="clock.fill" color={color} />
-          ),
-        }}
-      />
+      <Tabs.Screen name="register-patient" options={{ href: null, title: "Register" }} />
+      <Tabs.Screen name="availability" options={{ href: null, title: "Availability" }} />
     </Tabs>
   );
 }

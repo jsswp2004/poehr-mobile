@@ -26,6 +26,7 @@ const MAPPING = {
   calendar: "event",
   "clock.fill": "schedule",
   "list.bullet": "format-list-bulleted",
+  ellipsis: "more-horiz",
 } as IconMapping;
 
 /**
