@@ -1,22 +1,35 @@
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { tokenStore } from "@/utils/tokenStore";
 import moment from "moment";
+import { router } from "expo-router";
 import React, { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  View,
 } from "react-native";
-import { Calendar, DateData } from "react-native-calendars";
+import { Calendar, DateData, LocaleConfig } from "react-native-calendars";
 
 import AppointmentModal from "@/components/AppointmentModal";
 import BlockedDateModal from "@/components/BlockedDateModal";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { API_BASE_URL } from "@/config/api";
+
+// Single-letter weekday headers, as in the mock.
+LocaleConfig.locales["en-short"] = {
+  monthNames: ["January","February","March","April","May","June","July","August","September","October","November","December"],
+  monthNamesShort: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  dayNames: ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"],
+  dayNamesShort: ["S","M","T","W","T","F","S"],
+  today: "Today",
+};
+LocaleConfig.defaultLocale = "en-short";
 
 interface Appointment {
   id: number;
@@ -93,6 +106,7 @@ export default function AppointmentsScreen() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [providerFilter, setProviderFilter] = useState<number | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<
     Appointment | undefined
@@ -458,23 +472,41 @@ export default function AppointmentsScreen() {
     !!user && user.role !== "patient" && user.role !== "doctor" && doctors.length > 1;
   const dayBlockedDates = getBlockedDatesForDate(selectedDate);
 
+  const isStaffUser = !!user && user.role !== "patient";
+  const providerLabel =
+    providerFilter === null
+      ? "All providers"
+      : `Dr. ${doctors.find((d) => d.id === providerFilter)?.last_name ?? ""}`;
+  const cycleProvider = () => {
+    const ids = [null, ...doctors.map((d) => d.id)] as (number | null)[];
+    const i = ids.indexOf(providerFilter);
+    setProviderFilter(ids[(i + 1) % ids.length]);
+  };
+
   return (
+    <View style={styles.root}>
     <ScrollView
       style={styles.container}
       contentContainerStyle={styles.scrollContent}
       showsVerticalScrollIndicator={false}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={refreshData} />
+      }
     >
       <ThemedView style={styles.header}>
-        <ThemedView style={styles.headerTitleWrapper}>
-          <ThemedText type="title" style={styles.headerTitle}>
-            Calendar
-          </ThemedText>
-        </ThemedView>
-        <TouchableOpacity style={styles.refreshButton} onPress={refreshData}>
-          <ThemedText style={styles.refreshButtonText}>
-            {refreshing ? "Refreshing..." : "Refresh"}
-          </ThemedText>
-        </TouchableOpacity>
+        <ThemedText type="title" style={styles.headerTitle}>
+          Calendar
+        </ThemedText>
+        {showProviderFilter && (
+          <TouchableOpacity
+            style={styles.providerPill}
+            onPress={cycleProvider}
+            accessibilityRole="button"
+            accessibilityLabel="Change provider filter"
+          >
+            <ThemedText style={styles.providerPillText}>{providerLabel} ▾</ThemedText>
+          </TouchableOpacity>
+        )}
       </ThemedView>
 
       <ThemedView style={styles.calendarContainer}>
@@ -517,9 +549,23 @@ export default function AppointmentsScreen() {
       </ThemedView>
 
       <ThemedView style={styles.selectedDateContainer}>
-        <ThemedText type="subtitle">
-          {moment(selectedDate).format("MMMM D, YYYY")}
-        </ThemedText>
+        <ThemedView style={styles.dateHeadRow}>
+          <ThemedText style={styles.dateHead}>
+            {moment(selectedDate).format("dddd, MMM D")}
+          </ThemedText>
+          <ThemedView style={styles.dateLinks}>
+            {isStaffUser && (
+              <TouchableOpacity onPress={() => router.push("/(tabs)/my-schedule")}>
+                <ThemedText style={styles.dateLink}>My Day</ThemedText>
+              </TouchableOpacity>
+            )}
+            {isStaffUser && (
+              <TouchableOpacity onPress={handleBlockDate}>
+                <ThemedText style={styles.dateLink}>Block date</ThemedText>
+              </TouchableOpacity>
+            )}
+          </ThemedView>
+        </ThemedView>
 
         {dayBlockedDates.length > 0 && (
           <ThemedView style={styles.blockedSection}>
@@ -576,6 +622,16 @@ export default function AppointmentsScreen() {
                 )
               </ThemedText>
             </ThemedView>
+            <TouchableOpacity
+              onPress={() => setShowFilters((v) => !v)}
+              style={styles.filterToggle}
+              accessibilityRole="button"
+            >
+              <ThemedText style={styles.dateLink}>
+                {showFilters ? "Hide filters" : filtersActive ? "Filters on" : "Filter"}
+              </ThemedText>
+            </TouchableOpacity>
+            {showFilters && (
             <ThemedView style={styles.filterBar}>
               <TextInput
                 style={styles.filterSearch}
@@ -613,52 +669,8 @@ export default function AppointmentsScreen() {
                   </TouchableOpacity>
                 ))}
               </ScrollView>
-              {showProviderFilter && (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.chipRow}
-                >
-                  <TouchableOpacity
-                    style={[
-                      styles.chip,
-                      providerFilter === null && styles.chipActive,
-                    ]}
-                    onPress={() => setProviderFilter(null)}
-                    accessibilityRole="button"
-                  >
-                    <ThemedText
-                      style={[
-                        styles.chipText,
-                        providerFilter === null && styles.chipTextActive,
-                      ]}
-                    >
-                      All providers
-                    </ThemedText>
-                  </TouchableOpacity>
-                  {doctors.map((d) => (
-                    <TouchableOpacity
-                      key={d.id}
-                      style={[
-                        styles.chip,
-                        providerFilter === d.id && styles.chipActive,
-                      ]}
-                      onPress={() => setProviderFilter(d.id)}
-                      accessibilityRole="button"
-                    >
-                      <ThemedText
-                        style={[
-                          styles.chipText,
-                          providerFilter === d.id && styles.chipTextActive,
-                        ]}
-                      >
-                        Dr. {d.last_name}
-                      </ThemedText>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              )}
             </ThemedView>
+            )}
             {filteredAppointments.length === 0 && (
               <ThemedView style={styles.noMatch}>
                 <ThemedText>No appointments match your filters.</ThemedText>
@@ -743,51 +755,10 @@ export default function AppointmentsScreen() {
               );
             })}
 
-            {/* Action buttons for creating appointments and blocking dates */}
-            {user?.role !== "patient" && (
-              <ThemedView style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.createButton}
-                  onPress={handleCreateAppointment}
-                >
-                  <ThemedText style={styles.createButtonText}>
-                    New appointment
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.blockButton}
-                  onPress={handleBlockDate}
-                >
-                  <ThemedText style={styles.blockButtonText}>
-                    Block date
-                  </ThemedText>
-                </TouchableOpacity>
-              </ThemedView>
-            )}
           </ThemedView>
         ) : (
           <ThemedView style={styles.noAppointments}>
             <ThemedText>No appointments scheduled for this date.</ThemedText>
-            {user?.role !== "patient" && (
-              <ThemedView style={styles.actionButtons}>
-                <TouchableOpacity
-                  style={styles.createButton}
-                  onPress={handleCreateAppointment}
-                >
-                  <ThemedText style={styles.createButtonText}>
-                    New appointment
-                  </ThemedText>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={styles.blockButton}
-                  onPress={handleBlockDate}
-                >
-                  <ThemedText style={styles.blockButtonText}>
-                    Block date
-                  </ThemedText>
-                </TouchableOpacity>
-              </ThemedView>
-            )}
           </ThemedView>
         )}
       </ThemedView>
@@ -814,22 +785,68 @@ export default function AppointmentsScreen() {
         currentUser={user}
       />
     </ScrollView>
+    {isStaffUser && (
+      <TouchableOpacity
+        style={styles.fab}
+        onPress={handleCreateAppointment}
+        accessibilityRole="button"
+        accessibilityLabel="New appointment"
+      >
+        <ThemedText style={styles.fabText}>+ New</ThemedText>
+      </TouchableOpacity>
+    )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  root: { flex: 1, backgroundColor: "#fff" },
   container: {
     flex: 1,
-    padding: 16,
+    paddingHorizontal: 20,
   },
   scrollContent: {
-    paddingBottom: 100, // Add padding to prevent buttons from being hidden under tab bar
+    paddingBottom: 120,
   },
+  providerPill: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    backgroundColor: "#f5f7fa",
+    justifyContent: "center",
+  },
+  providerPillText: { fontSize: 13, fontWeight: "600", color: "#3d4852" },
+  dateHeadRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "baseline",
+    backgroundColor: "transparent",
+  },
+  dateHead: { fontSize: 16, fontWeight: "700" },
+  dateLinks: { flexDirection: "row", gap: 16, backgroundColor: "transparent" },
+  dateLink: { fontSize: 13, fontWeight: "600", color: "#0d5cab", paddingVertical: 8 },
+  filterToggle: { alignSelf: "flex-start", backgroundColor: "transparent" },
+  fab: {
+    position: "absolute",
+    right: 20,
+    bottom: 20,
+    height: 56,
+    paddingHorizontal: 22,
+    borderRadius: 28,
+    backgroundColor: "#1976d2",
+    justifyContent: "center",
+    shadowColor: "#1976d2",
+    shadowOpacity: 0.4,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+    elevation: 6,
+  },
+  fabText: { color: "#fff", fontSize: 15, fontWeight: "600" },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 20,
+    height: 60,
   },
   headerTitleWrapper: {
     flex: 1,
@@ -854,9 +871,8 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   calendarContainer: {
-    marginBottom: 20,
-    borderRadius: 10,
-    padding: 10,
+    marginBottom: 4,
+    marginHorizontal: -8,
     backgroundColor: "transparent",
   },
   legendContainer: {
@@ -877,7 +893,9 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   selectedDateContainer: {
+    marginTop: 6,
     marginBottom: 20,
+    backgroundColor: "transparent",
   },
   blockedSection: {
     marginTop: 15,
@@ -1123,7 +1141,7 @@ const styles = StyleSheet.create({
   legendRow: {
     flexDirection: "row",
     gap: 18,
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingVertical: 6,
     backgroundColor: "transparent",
   },
