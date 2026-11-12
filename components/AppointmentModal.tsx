@@ -1,6 +1,6 @@
 import { tokenStore } from "@/utils/tokenStore";
 import DateTimePicker from "@react-native-community/datetimepicker";
-import { Picker } from "@react-native-picker/picker";
+import SelectField from "@/components/SelectField";
 import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
 import {
@@ -696,7 +696,7 @@ export default function AppointmentModal({
                   <DateTimePicker
                     value={new Date(formData.appointment_date)}
                     mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display={Platform.OS === "ios" ? "inline" : "default"}
                     onChange={handleDateChange}
                     minimumDate={new Date()}
                   />
@@ -707,40 +707,12 @@ export default function AppointmentModal({
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Clinic Event</ThemedText>
                 {clinicEvents.length > 0 ? (
-                  <ThemedView style={styles.pickerContainer}>
-                    <Picker
-                      selectedValue={formData.clinic_event_id}
-                      onValueChange={(value) => {
-
-                        // Handle both string and number values
-                        const numericValue =
-                          typeof value === "string"
-                            ? parseInt(value, 10)
-                            : value;
-
-                        if (
-                          value !== undefined &&
-                          value !== null &&
-                          !isNaN(numericValue)
-                        ) {
-                          setFormData((prev) => ({
-                            ...prev,
-                            clinic_event_id: numericValue,
-                          }));
-                        }
-                      }}
-                      style={styles.picker}
-                    >
-                      <Picker.Item label="Select Clinic Event" value={0} />
-                      {clinicEvents.map((event) => (
-                        <Picker.Item
-                          key={event.id}
-                          label={event.name}
-                          value={event.id}
-                        />
-                      ))}
-                    </Picker>
-                  </ThemedView>
+                  <SelectField
+                    title="Clinic event"
+                    value={formData.clinic_event_id || 0}
+                    options={[{ label: "Select clinic event", value: 0 }, ...clinicEvents.map((e) => ({ label: e.name, value: e.id }))]}
+                    onChange={(v) => setFormData((prev) => ({ ...prev, clinic_event_id: Number(v) }))}
+                  />
                 ) : (
                   <ThemedView style={styles.pickerContainer}>
                     <ThemedText style={styles.dateText}>
@@ -754,67 +726,23 @@ export default function AppointmentModal({
               {/* Time Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Time</ThemedText>
-                <ThemedView style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={formData.appointment_time || "09:00"}
-                    onValueChange={(value) => {
-                      if (value && typeof value === "string" && value !== "") {
-                        setFormData((prev) => ({
-                          ...prev,
-                          appointment_time: value,
-                        }));
-                      }
-                    }}
-                    style={styles.picker}
-                  >
-                    {timeSlots.map((time) => {
-                      const timeLabel = moment(time, "HH:mm").format("h:mm A");
-                      return (
-                        <Picker.Item
-                          key={time}
-                          label={timeLabel}
-                          value={time}
-                        />
-                      );
-                    })}
-                  </Picker>
-                </ThemedView>
+                <SelectField
+                  title="Time"
+                  value={formData.appointment_time || "09:00"}
+                  options={timeSlots.map((time) => ({ label: moment(time, "HH:mm").format("h:mm A"), value: time }))}
+                  onChange={(v) => setFormData((prev) => ({ ...prev, appointment_time: String(v) }))}
+                />
               </ThemedView>
 
               {/* Duration Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Duration</ThemedText>
-                <ThemedView style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={formData.duration || 30}
-                    onValueChange={(value) => {
-
-                      // Handle both string and number values
-                      const numericValue =
-                        typeof value === "string" ? parseInt(value, 10) : value;
-                      if (
-                        value !== undefined &&
-                        value !== null &&
-                        !isNaN(numericValue) &&
-                        numericValue > 0
-                      ) {
-                        setFormData((prev) => ({
-                          ...prev,
-                          duration: numericValue,
-                        }));
-                      }
-                    }}
-                    style={styles.picker}
-                  >
-                    {[15, 30, 45, 60, 90, 120].map((duration) => (
-                      <Picker.Item
-                        key={duration}
-                        label={`${duration} minutes`}
-                        value={duration}
-                      />
-                    ))}
-                  </Picker>
-                </ThemedView>
+                <SelectField
+                  title="Duration"
+                  value={formData.duration || 30}
+                  options={[15, 30, 45, 60, 90, 120].map((d) => ({ label: `${d} minutes`, value: d }))}
+                  onChange={(v) => setFormData((prev) => ({ ...prev, duration: Number(v) }))}
+                />
               </ThemedView>
 
               {/* Patient Section (only for non-patients) */}
@@ -822,63 +750,15 @@ export default function AppointmentModal({
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Patient</ThemedText>
                   {patients.length > 0 ? (
-                    <ThemedView style={styles.pickerContainer}>
-                      <Picker
-                        selectedValue={formData.patient_id || 0}
-                        onValueChange={(value) => {
-
-                          // Handle both string and number values, ensure we get a valid number
-                          let numericValue = 0;
-                          if (typeof value === "string") {
-                            numericValue = parseInt(value, 10);
-                          } else if (typeof value === "number") {
-                            numericValue = value;
-                          }
-
-                          // Validate that the patient ID actually exists in our patients array
-                          const selectedPatient = patients.find(
-                            (p) => p.id === numericValue
-                          );
-
-
-                          // ENHANCED DEBUGGING: Log the exact patient being selected
-                          if (selectedPatient) {
-                          } else if (numericValue === 0) {
-                          } else {
-                          }
-
-                          if (numericValue === 0 || selectedPatient) {
-                            // Only update if it's a valid selection (0 for "Select Patient" or a valid patient ID)
-                            setFormData((prev) => {
-                              const newFormData = {
-                                ...prev,
-                                patient_id: numericValue,
-                              };
-                              return newFormData;
-                            });
-                          } else {
-                          }
-                        }}
-                        style={styles.picker}
-                      >
-                        <Picker.Item label="Select Patient" value={0} />
-                        {patients.map((patient) => {
-                          const patientLabel =
-                            patient.first_name && patient.last_name
-                              ? `${patient.first_name} ${patient.last_name}`
-                              : patient.username
-                              ? patient.username
-                              : `Patient ${patient.id}`;
-                          return (
-                            <Picker.Item
-                              key={patient.id}
-                              label={patientLabel}
-                              value={patient.id}
-                            />
-                          );
-                        })}
-                      </Picker>
-                    </ThemedView>
+                    <SelectField
+                      title="Patient"
+                      value={formData.patient_id || 0}
+                      options={[{ label: "Select patient", value: 0 }, ...patients.map((p) => ({
+                        label: p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.username ? p.username : `Patient ${p.id}`,
+                        value: p.id,
+                      }))]}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, patient_id: Number(v) }))}
+                    />
                   ) : (
                     <ThemedView style={styles.pickerContainer}>
                       <ThemedText style={styles.dateText}>
@@ -895,48 +775,15 @@ export default function AppointmentModal({
                 <ThemedView style={styles.section}>
                   <ThemedText style={styles.label}>Doctor</ThemedText>
                   {doctors.length > 0 ? (
-                    <ThemedView style={styles.pickerContainer}>
-                      <Picker
-                        selectedValue={formData.doctor_id || 0}
-                        onValueChange={(value) => {
-
-                          // Handle both string and number values
-                          const numericValue =
-                            typeof value === "string"
-                              ? parseInt(value, 10)
-                              : value;
-
-                          if (
-                            value !== undefined &&
-                            value !== null &&
-                            !isNaN(numericValue)
-                          ) {
-                            setFormData((prev) => ({
-                              ...prev,
-                              doctor_id: numericValue,
-                            }));
-                          }
-                        }}
-                        style={styles.picker}
-                      >
-                        <Picker.Item label="Select Doctor" value={0} />
-                        {doctors.map((doctor) => {
-                          const doctorLabel =
-                            doctor.first_name && doctor.last_name
-                              ? `Dr. ${doctor.first_name} ${doctor.last_name}`
-                              : doctor.username
-                              ? doctor.username
-                              : `Doctor ${doctor.id}`;
-                          return (
-                            <Picker.Item
-                              key={doctor.id}
-                              label={doctorLabel}
-                              value={doctor.id}
-                            />
-                          );
-                        })}
-                      </Picker>
-                    </ThemedView>
+                    <SelectField
+                      title="Doctor"
+                      value={formData.doctor_id || 0}
+                      options={[{ label: "Select doctor", value: 0 }, ...doctors.map((d) => ({
+                        label: d.first_name && d.last_name ? `Dr. ${d.first_name} ${d.last_name}` : d.username ? d.username : `Doctor ${d.id}`,
+                        value: d.id,
+                      }))]}
+                      onChange={(v) => setFormData((prev) => ({ ...prev, doctor_id: Number(v) }))}
+                    />
                   ) : (
                     <ThemedView style={styles.pickerContainer}>
                       <ThemedText style={styles.dateText}>
@@ -950,26 +797,21 @@ export default function AppointmentModal({
               {/* Status Section */}
               <ThemedView style={styles.section}>
                 <ThemedText style={styles.label}>Status</ThemedText>
-                <ThemedView style={styles.pickerContainer}>
-                  <Picker
-                    selectedValue={formData.status || "pending"}
-                    onValueChange={(value) => {
-                      if (value && typeof value === "string" && value !== "") {
-                        setFormData((prev) => ({ ...prev, status: value }));
-                      }
-                    }}
-                    style={styles.picker}
-                  >
-                    <Picker.Item label="Scheduled" value="scheduled" />
-                    <Picker.Item label="Pending" value="pending" />
-                    <Picker.Item label="Confirmed" value="confirmed" />
-                    <Picker.Item label="Cancelled" value="cancelled" />
-                    <Picker.Item label="Completed" value="completed" />
-                    <Picker.Item label="In Progress" value="in_progress" />
-                    <Picker.Item label="No Show" value="no_show" />
-                    <Picker.Item label="Rescheduled" value="rescheduled" />
-                  </Picker>
-                </ThemedView>
+                <SelectField
+                  title="Status"
+                  value={formData.status || "pending"}
+                  options={[
+                    { label: "Scheduled", value: "scheduled" },
+                    { label: "Pending", value: "pending" },
+                    { label: "Confirmed", value: "confirmed" },
+                    { label: "Cancelled", value: "cancelled" },
+                    { label: "Completed", value: "completed" },
+                    { label: "In progress", value: "in_progress" },
+                    { label: "No show", value: "no_show" },
+                    { label: "Rescheduled", value: "rescheduled" },
+                  ]}
+                  onChange={(v) => setFormData((prev) => ({ ...prev, status: String(v) }))}
+                />
               </ThemedView>
 
               {/* Notes Section */}

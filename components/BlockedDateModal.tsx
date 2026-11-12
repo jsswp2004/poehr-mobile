@@ -298,7 +298,7 @@ export default function BlockedDateModal({
                   <DateTimePicker
                     value={new Date(formData.date)}
                     mode="date"
-                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    display={Platform.OS === "ios" ? "inline" : "default"}
                     onChange={handleDateChange}
                     minimumDate={new Date()}
                   />
