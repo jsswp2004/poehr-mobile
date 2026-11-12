@@ -70,6 +70,16 @@ const STATUS_FILTERS = [
   { value: "cancelled", label: "Cancelled" },
 ];
 
+const APPT_STATUS: Record<string, { bg: string; fg: string; label: string }> = {
+  scheduled: { bg: "#e3effc", fg: "#0d5cab", label: "Scheduled" },
+  pending: { bg: "#fdf0dc", fg: "#8a4b00", label: "Pending" },
+  in_progress: { bg: "#e3f4e6", fg: "#1b6b2a", label: "In progress" },
+  completed: { bg: "#eceff2", fg: "#3d4852", label: "Completed" },
+  no_show: { bg: "#fde7e7", fg: "#a31d1d", label: "No show" },
+  cancelled: { bg: "#eceff2", fg: "#3d4852", label: "Cancelled" },
+  rescheduled: { bg: "#eceff2", fg: "#3d4852", label: "Rescheduled" },
+};
+
 export default function AppointmentsScreen() {
   const { user, loading: userLoading } = useCurrentUser();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -537,7 +547,7 @@ export default function AppointmentsScreen() {
       <ThemedView style={styles.header}>
         <ThemedView style={styles.headerTitleWrapper}>
           <ThemedText type="title" style={styles.headerTitle}>
-            Appointments 📅
+            Calendar
           </ThemedText>
         </ThemedView>
         <TouchableOpacity style={styles.refreshButton} onPress={refreshData}>
@@ -576,19 +586,18 @@ export default function AppointmentsScreen() {
         />
       </ThemedView>
 
-      <ThemedView style={styles.legendContainer}>
-        <ThemedText type="subtitle">Legend</ThemedText>
+      <ThemedView style={styles.legendRow}>
         <ThemedView style={styles.legendItem}>
           <ThemedView
             style={[styles.legendDot, { backgroundColor: "#2e7d32" }]}
           />
-          <ThemedText>Appointments</ThemedText>
+          <ThemedText style={styles.legendText}>Has appointments</ThemedText>
         </ThemedView>
         <ThemedView style={styles.legendItem}>
           <ThemedView
             style={[styles.legendDot, { backgroundColor: "#c62828" }]}
           />
-          <ThemedText>Blocked Dates</ThemedText>
+          <ThemedText style={styles.legendText}>Blocked</ThemedText>
         </ThemedView>
       </ThemedView>
 
@@ -600,7 +609,7 @@ export default function AppointmentsScreen() {
         {dayBlockedDates.length > 0 && (
           <ThemedView style={styles.blockedSection}>
             <ThemedView style={styles.sectionTitleWrapper}>
-              <ThemedText style={styles.sectionTitle}>🚫 Blocked</ThemedText>
+              <ThemedText style={styles.sectionTitle}>Blocked</ThemedText>
             </ThemedView>
             {dayBlockedDates.map((blocked) => (
               <ThemedView key={blocked.id} style={styles.blockedItem}>
@@ -645,7 +654,7 @@ export default function AppointmentsScreen() {
           <ThemedView style={styles.appointmentsSection}>
             <ThemedView style={styles.sectionTitleWrapper}>
               <ThemedText style={styles.sectionTitle}>
-                Appointments📅(
+                Appointments (
                 {filtersActive
                   ? `${filteredAppointments.length} of ${dayAppointments.length}`
                   : dayAppointments.length}
@@ -744,82 +753,77 @@ export default function AppointmentsScreen() {
               </ThemedView>
             )}
             {filteredAppointments.map((appointment) => {
+              const st =
+                APPT_STATUS[appointment.status] || APPT_STATUS.scheduled;
+              const timeText = appointment.appointment_datetime
+                ? moment(appointment.appointment_datetime)
+                : appointment.appointment_time
+                ? moment(appointment.appointment_time, "HH:mm:ss")
+                : null;
+              const who =
+                user?.role === "patient"
+                  ? appointment.provider_name ||
+                    appointment.doctor_name ||
+                    "Unknown Doctor"
+                  : appointment.patient_name || "Unknown Patient";
+              const sub = [
+                appointment.title,
+                user?.role !== "patient"
+                  ? appointment.provider_name || appointment.doctor_name
+                  : null,
+                `${appointment.duration_minutes || appointment.duration || 30} min`,
+              ]
+                .filter(Boolean)
+                .join(" · ");
               return (
-                <ThemedView key={appointment.id} style={styles.appointmentItem}>
-                  <ThemedView style={styles.appointmentHeader}>
-                    <ThemedText style={styles.appointmentTime}>
-                      {appointment.appointment_datetime
-                        ? moment(appointment.appointment_datetime).format(
-                            "h:mm A"
-                          )
-                        : appointment.appointment_time
-                        ? moment(
-                            appointment.appointment_time,
-                            "HH:mm:ss"
-                          ).format("h:mm A")
-                        : "Time not set"}
+                <ThemedView key={appointment.id} style={styles.apptCard}>
+                  <ThemedView style={styles.apptTimeCol}>
+                    <ThemedText style={styles.apptTime}>
+                      {timeText ? timeText.format("h:mm") : "--"}
                     </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.status,
-                        appointment.status === "confirmed" &&
-                          styles.statusConfirmed,
-                        appointment.status === "pending" &&
-                          styles.statusPending,
-                        appointment.status === "cancelled" &&
-                          styles.statusCancelled,
-                      ]}
-                    >
-                      {(appointment.status || "PENDING").toUpperCase()}
+                    <ThemedText style={styles.apptAmPm}>
+                      {timeText ? timeText.format("A") : ""}
                     </ThemedText>
                   </ThemedView>
-
-                  <ThemedText style={styles.appointmentName}>
-                    {user?.role === "patient"
-                      ? appointment.provider_name ||
-                        appointment.doctor_name ||
-                        "Unknown Doctor"
-                      : appointment.patient_name || "Unknown Patient"}
-                  </ThemedText>
-
-                  {appointment.title && (
-                    <ThemedText style={styles.appointmentEvent}>
-                      🏥 {appointment.title}
-                    </ThemedText>
-                  )}
-
-                  <ThemedText style={styles.appointmentDuration}>
-                    Duration:{" "}
-                    {appointment.duration_minutes || appointment.duration || 30}{" "}
-                    minutes
-                  </ThemedText>
-
-                  {(appointment.notes || appointment.description) && (
-                    <ThemedText style={styles.appointmentNotes}>
-                      Notes: {appointment.notes || appointment.description}
-                    </ThemedText>
-                  )}
-
-                  {(user?.role === "doctor" || user?.role === "admin") && (
-                    <ThemedView style={styles.appointmentActions}>
-                      <TouchableOpacity
-                        style={styles.editButton}
-                        onPress={() => handleEditAppointment(appointment)}
+                  <ThemedView style={styles.apptBody}>
+                    <ThemedText style={styles.apptName}>{who}</ThemedText>
+                    <ThemedText style={styles.apptSub}>{sub}</ThemedText>
+                    {(appointment.notes || appointment.description) && (
+                      <ThemedText style={styles.apptNotes} numberOfLines={2}>
+                        {appointment.notes || appointment.description}
+                      </ThemedText>
+                    )}
+                    <ThemedView style={styles.apptFooter}>
+                      <ThemedText
+                        style={[
+                          styles.apptChip,
+                          { backgroundColor: st.bg, color: st.fg },
+                        ]}
                       >
-                        <ThemedText style={styles.editButtonText}>
-                          Edit
-                        </ThemedText>
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.deleteButton}
-                        onPress={() => handleDeleteAppointment(appointment)}
-                      >
-                        <ThemedText style={styles.deleteButtonText}>
-                          Delete
-                        </ThemedText>
-                      </TouchableOpacity>
+                        {st.label}
+                      </ThemedText>
+                      {(user?.role === "doctor" || user?.role === "admin") && (
+                        <ThemedView style={styles.apptActions}>
+                          <TouchableOpacity
+                            style={styles.apptEdit}
+                            onPress={() => handleEditAppointment(appointment)}
+                          >
+                            <ThemedText style={styles.apptEditText}>
+                              Edit
+                            </ThemedText>
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            style={styles.apptDelete}
+                            onPress={() => handleDeleteAppointment(appointment)}
+                          >
+                            <ThemedText style={styles.apptDeleteText}>
+                              Delete
+                            </ThemedText>
+                          </TouchableOpacity>
+                        </ThemedView>
+                      )}
                     </ThemedView>
-                  )}
+                  </ThemedView>
                 </ThemedView>
               );
             })}
@@ -832,7 +836,7 @@ export default function AppointmentsScreen() {
                   onPress={handleCreateAppointment}
                 >
                   <ThemedText style={styles.createButtonText}>
-                    + Create Appointment
+                    New appointment
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -840,7 +844,7 @@ export default function AppointmentsScreen() {
                   onPress={handleBlockDate}
                 >
                   <ThemedText style={styles.blockButtonText}>
-                    🚫 Block Date
+                    Block date
                   </ThemedText>
                 </TouchableOpacity>
               </ThemedView>
@@ -856,7 +860,7 @@ export default function AppointmentsScreen() {
                   onPress={handleCreateAppointment}
                 >
                   <ThemedText style={styles.createButtonText}>
-                    + Create Appointment
+                    New appointment
                   </ThemedText>
                 </TouchableOpacity>
                 <TouchableOpacity
@@ -864,7 +868,7 @@ export default function AppointmentsScreen() {
                   onPress={handleBlockDate}
                 >
                   <ThemedText style={styles.blockButtonText}>
-                    🚫 Block Date
+                    Block date
                   </ThemedText>
                 </TouchableOpacity>
               </ThemedView>
@@ -1201,4 +1205,65 @@ const styles = StyleSheet.create({
     color: "#1976d2",
     fontWeight: "600",
   },
+  legendRow: {
+    flexDirection: "row",
+    gap: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    backgroundColor: "transparent",
+  },
+  legendText: { fontSize: 12, color: "#5b6670" },
+  apptCard: {
+    flexDirection: "row",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: "#e3e8ee",
+    borderRadius: 16,
+    padding: 12,
+    marginBottom: 10,
+    backgroundColor: "#fff",
+  },
+  apptTimeCol: { width: 52, alignItems: "center", backgroundColor: "transparent" },
+  apptTime: { fontSize: 18, fontWeight: "700", color: "#1976d2" },
+  apptAmPm: { fontSize: 11, fontWeight: "600", color: "#1976d2" },
+  apptBody: { flex: 1, backgroundColor: "transparent" },
+  apptName: { fontSize: 16, fontWeight: "600", color: "#11181C" },
+  apptSub: { fontSize: 12, color: "#5b6670", marginTop: 2 },
+  apptNotes: { fontSize: 12, color: "#5b6670", marginTop: 4, fontStyle: "italic" },
+  apptFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 8,
+    backgroundColor: "transparent",
+  },
+  apptChip: {
+    fontSize: 11,
+    fontWeight: "600",
+    paddingHorizontal: 9,
+    paddingVertical: 3,
+    borderRadius: 10,
+    overflow: "hidden",
+  },
+  apptActions: { flexDirection: "row", gap: 8, backgroundColor: "transparent" },
+  apptEdit: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#c9dcf2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  apptEditText: { color: "#0d5cab", fontWeight: "600", fontSize: 13 },
+  apptDelete: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#f0c4c4",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  apptDeleteText: { color: "#c62828", fontWeight: "600", fontSize: 13 },
 });
