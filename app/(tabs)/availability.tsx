@@ -388,7 +388,7 @@ export default function AvailabilityScreen() {
       <ThemedView style={styles.header}>
         <ThemedView style={styles.headerTitleWrapper}>
           <ThemedText type="title" style={styles.headerTitle}>
-            Clinician Schedule 🛠️
+            Availability
           </ThemedText>
         </ThemedView>
         <TouchableOpacity style={styles.refreshButton} onPress={refreshData}>
@@ -401,12 +401,12 @@ export default function AvailabilityScreen() {
       {/* Schedule Maintenance Form */}
       <ThemedView style={styles.formContainer}>
         <ThemedText type="subtitle" style={styles.sectionTitle}>
-          Schedule Form
+          {editingId ? "Edit entry" : "Add availability or block"}
         </ThemedText>
 
         {/* Doctor Selection */}
         <ThemedView style={styles.inputContainer}>
-          <ThemedText style={styles.inputLabel}>Select Clinician</ThemedText>
+          <ThemedText style={styles.inputLabel}>Clinician</ThemedText>
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => {
@@ -433,7 +433,7 @@ export default function AvailabilityScreen() {
 
         {/* Start Time */}
         <ThemedView style={styles.inputContainer}>
-          <ThemedText style={styles.inputLabel}>Start Time</ThemedText>
+          <ThemedText style={styles.inputLabel}>Starts</ThemedText>
           <TouchableOpacity
             style={styles.datePickerButton}
             onPress={() => setShowStartDatePicker(true)}
@@ -459,7 +459,7 @@ export default function AvailabilityScreen() {
 
         {/* End Time */}
         <ThemedView style={styles.inputContainer}>
-          <ThemedText style={styles.inputLabel}>End Time</ThemedText>
+          <ThemedText style={styles.inputLabel}>Ends</ThemedText>
           <TouchableOpacity
             style={styles.datePickerButton}
             onPress={() => setShowEndDatePicker(true)}
@@ -485,7 +485,7 @@ export default function AvailabilityScreen() {
 
         {/* Recurrence */}
         <ThemedView style={styles.inputContainer}>
-          <ThemedText style={styles.inputLabel}>Recurrence</ThemedText>
+          <ThemedText style={styles.inputLabel}>Repeat</ThemedText>
           <TouchableOpacity
             style={styles.dropdownButton}
             onPress={() => setShowRecurrenceModal(true)}
@@ -507,7 +507,7 @@ export default function AvailabilityScreen() {
 
         {/* Recurrence End Date */}
         <ThemedView style={styles.inputContainer}>
-          <ThemedText style={styles.inputLabel}>Recurrence End Date</ThemedText>
+          <ThemedText style={styles.inputLabel}>Repeat until</ThemedText>
           <TouchableOpacity
             style={styles.datePickerButton}
             onPress={() => setShowRecurrenceEndDatePicker(true)}
@@ -552,14 +552,14 @@ export default function AvailabilityScreen() {
             )}
           </View>
           <ThemedText style={styles.checkboxLabel}>
-            Block this schedule
+            Block this time (not bookable)
           </ThemedText>
         </TouchableOpacity>
 
         {/* Block Type (conditional) */}
         {formData.is_blocked && (
           <ThemedView style={styles.inputContainer}>
-            <ThemedText style={styles.inputLabel}>Block Type</ThemedText>
+            <ThemedText style={styles.inputLabel}>Block type</ThemedText>
             <TouchableOpacity
               style={styles.dropdownButton}
               onPress={() => setShowBlockTypeModal(true)}
@@ -576,7 +576,7 @@ export default function AvailabilityScreen() {
         <ThemedView style={styles.actionButtons}>
           <TouchableOpacity style={styles.saveButton} onPress={handleSubmit}>
             <ThemedText style={styles.saveButtonText}>
-              {editingId ? "Update" : "Save"}
+              {editingId ? "Update entry" : "Save"}
             </ThemedText>
           </TouchableOpacity>
           {editingId && (
@@ -594,13 +594,13 @@ export default function AvailabilityScreen() {
       {selectedDoctor && (
         <ThemedView style={styles.overviewContainer}>
           <ThemedText type="subtitle" style={styles.sectionTitle}>
-            📋 Schedule Overview
+            Schedule overview
           </ThemedText>
 
           {/* Available Schedules */}
           <ThemedView style={styles.scheduleSection}>
             <ThemedText style={styles.scheduleTypeTitle}>
-              ✅ Availability
+              Available times
             </ThemedText>
             {schedules.filter((s) => !s.is_blocked).length > 0 ? (
               schedules
@@ -617,7 +617,7 @@ export default function AvailabilityScreen() {
                         onPress={() => handleEdit(s)}
                       >
                         <ThemedText style={styles.actionButtonText}>
-                          ✏️
+                          Edit
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -625,7 +625,7 @@ export default function AvailabilityScreen() {
                         onPress={() => handleDelete(s.id)}
                       >
                         <ThemedText style={styles.actionButtonText}>
-                          🗑️
+                          Delete
                         </ThemedText>
                       </TouchableOpacity>
                     </ThemedView>
@@ -640,7 +640,7 @@ export default function AvailabilityScreen() {
 
           {/* Blocked Schedules */}
           <ThemedView style={styles.scheduleSection}>
-            <ThemedText style={styles.scheduleTypeTitle}>🚫 Blocked</ThemedText>
+            <ThemedText style={styles.scheduleTypeTitle}>Blocked times</ThemedText>
             {schedules.filter((s) => s.is_blocked).length > 0 ? (
               schedules
                 .filter((s) => s.is_blocked)
@@ -658,7 +658,7 @@ export default function AvailabilityScreen() {
                         onPress={() => handleEdit(s)}
                       >
                         <ThemedText style={styles.actionButtonText}>
-                          ✏️
+                          Edit
                         </ThemedText>
                       </TouchableOpacity>
                       <TouchableOpacity
@@ -666,7 +666,7 @@ export default function AvailabilityScreen() {
                         onPress={() => handleDelete(s.id)}
                       >
                         <ThemedText style={styles.actionButtonText}>
-                          🗑️
+                          Delete
                         </ThemedText>
                       </TouchableOpacity>
                     </ThemedView>
@@ -688,7 +688,8 @@ export default function AvailabilityScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <ThemedText style={styles.modalTitle}>Select Clinician</ThemedText>
+            <View style={styles.sheetHandle} />
+            <ThemedText style={styles.modalTitle}>Select clinician</ThemedText>
             <ScrollView style={styles.modalOptions}>
               {doctors.map((doc) => (
                 <TouchableOpacity
@@ -725,7 +726,8 @@ export default function AvailabilityScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <ThemedText style={styles.modalTitle}>Select Recurrence</ThemedText>
+            <View style={styles.sheetHandle} />
+            <ThemedText style={styles.modalTitle}>Repeat</ThemedText>
             <ScrollView style={styles.modalOptions}>
               {["none", "daily", "weekly", "monthly"].map((value) => (
                 <TouchableOpacity
@@ -763,7 +765,8 @@ export default function AvailabilityScreen() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
-            <ThemedText style={styles.modalTitle}>Select Block Type</ThemedText>
+            <View style={styles.sheetHandle} />
+            <ThemedText style={styles.modalTitle}>Block type</ThemedText>
             <ScrollView style={styles.modalOptions}>
               {["Lunch", "Meeting", "Vacation", "On Leave"].map((value) => (
                 <TouchableOpacity
@@ -793,10 +796,15 @@ export default function AvailabilityScreen() {
   );
 }
 
+const INK = "#11181C";
+const MUTED = "#5b6670";
+const BORDER = "#c5ccd4";
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: 20,
+    backgroundColor: "#fff",
   },
   scrollContent: {
     paddingBottom: 100,
@@ -804,76 +812,79 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 20,
-    flexWrap: "wrap",
-    gap: 10,
+    alignItems: "center",
+    marginBottom: 16,
   },
   headerTitleWrapper: {
     flex: 1,
     minWidth: 0,
     marginRight: 10,
+    backgroundColor: "transparent",
   },
   headerTitle: {
     fontSize: 24,
-    lineHeight: 28,
+    lineHeight: 30,
     flexShrink: 1,
-    fontWeight: "bold",
+    fontWeight: "700",
   },
   refreshButton: {
-    backgroundColor: "#1976d2",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 5,
-    minWidth: 80,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: "#e8f1fb",
     alignItems: "center",
+    justifyContent: "center",
   },
   refreshButtonText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#0d5cab",
+    fontWeight: "600",
+    fontSize: 13,
   },
   formContainer: {
-    marginBottom: 30,
-    padding: 20,
-    borderRadius: 10,
-    backgroundColor: "transparent",
+    marginBottom: 24,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#e3e8ee",
+    backgroundColor: "#fff",
   },
   sectionTitle: {
-    fontWeight: "bold",
-    marginBottom: 15,
-    fontSize: 18,
+    fontWeight: "700",
+    marginBottom: 14,
+    fontSize: 17,
   },
   inputContainer: {
-    marginBottom: 15,
+    marginBottom: 14,
+    backgroundColor: "transparent",
   },
   inputLabel: {
     fontWeight: "600",
-    marginBottom: 8,
-    fontSize: 16,
+    marginBottom: 6,
+    fontSize: 13,
   },
   textInput: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "white",
+    borderColor: BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
     fontSize: 16,
     minHeight: 50,
   },
   pickerContainer: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    backgroundColor: "white",
+    borderColor: BORDER,
+    borderRadius: 12,
+    backgroundColor: "#fff",
     paddingHorizontal: 8,
     minHeight: 50,
     justifyContent: "center",
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    backgroundColor: "white",
+    borderColor: BORDER,
+    borderRadius: 12,
+    backgroundColor: "#fff",
     minHeight: 50,
     justifyContent: "center",
     overflow: "hidden",
@@ -884,159 +895,169 @@ const styles = StyleSheet.create({
   picker: {
     height: 50,
     backgroundColor: "transparent",
-    color: "#333",
+    color: INK,
     marginVertical: 0,
   },
   pickerItem: {
     fontSize: 16,
-    color: "#333",
-    backgroundColor: "white",
+    color: INK,
+    backgroundColor: "transparent",
     height: 50,
   },
   datePickerButton: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "white",
+    borderColor: BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
     minHeight: 50,
     justifyContent: "center",
   },
   datePickerText: {
     fontSize: 16,
-    color: "#333",
+    color: INK,
   },
   checkboxContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 15,
+    minHeight: 44,
+    marginBottom: 10,
+    backgroundColor: "transparent",
   },
   checkbox: {
-    width: 20,
-    height: 20,
+    width: 24,
+    height: 24,
     borderWidth: 2,
     borderColor: "#1976d2",
-    borderRadius: 4,
-    marginRight: 10,
+    borderRadius: 7,
+    marginRight: 12,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "white",
+    backgroundColor: "#fff",
   },
   checkboxChecked: {
     backgroundColor: "#1976d2",
   },
   checkmark: {
-    color: "white",
-    fontWeight: "bold",
-    fontSize: 12,
+    color: "#fff",
+    fontWeight: "700",
+    fontSize: 14,
+    lineHeight: 18,
   },
   checkboxLabel: {
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "500",
+    flexShrink: 1,
   },
   actionButtons: {
     flexDirection: "row",
-    justifyContent: "center",
     gap: 10,
-    marginTop: 20,
+    marginTop: 10,
+    backgroundColor: "transparent",
   },
   saveButton: {
-    backgroundColor: "#2e7d32",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
+    backgroundColor: "#1976d2",
+    height: 52,
+    justifyContent: "center",
+    borderRadius: 12,
     flex: 1,
   },
   saveButtonText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#fff",
+    fontWeight: "600",
     textAlign: "center",
     fontSize: 16,
   },
   cancelButton: {
-    backgroundColor: "#c62828",
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 8,
+    backgroundColor: "#f5f7fa",
+    height: 52,
+    justifyContent: "center",
+    borderRadius: 12,
     flex: 1,
+    borderWidth: 1,
+    borderColor: "#e3e8ee",
   },
   cancelButtonText: {
-    color: "white",
-    fontWeight: "bold",
+    color: "#3d4852",
+    fontWeight: "600",
     textAlign: "center",
     fontSize: 16,
   },
   overviewContainer: {
     marginBottom: 30,
-    padding: 20,
-    borderRadius: 10,
     backgroundColor: "transparent",
   },
   scheduleSection: {
-    marginBottom: 20,
+    marginBottom: 18,
+    backgroundColor: "transparent",
   },
   scheduleTypeTitle: {
-    fontWeight: "bold",
-    marginBottom: 10,
-    fontSize: 16,
-    color: "#222",
+    fontWeight: "700",
+    marginBottom: 8,
+    fontSize: 12,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
+    color: MUTED,
   },
   scheduleItem: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    gap: 10,
     padding: 12,
     marginBottom: 8,
-    borderRadius: 8,
+    borderRadius: 14,
     backgroundColor: "#fff",
-    borderLeftWidth: 4,
-    borderLeftColor: "#1976d2",
+    borderWidth: 1,
+    borderColor: "#e3e8ee",
   },
   scheduleTime: {
     flex: 1,
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "500",
+    color: INK,
   },
   scheduleActions: {
     flexDirection: "row",
-    gap: 8,
+    gap: 6,
+    backgroundColor: "transparent",
   },
   editButton: {
-    backgroundColor: "#1976d2",
+    backgroundColor: "#e8f1fb",
+    minHeight: 36,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   deleteButton: {
-    backgroundColor: "#c62828",
+    backgroundColor: "#fde7e7",
+    minHeight: 36,
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 4,
+    justifyContent: "center",
+    borderRadius: 18,
   },
   actionButtonText: {
-    color: "white",
+    color: "#0d5cab",
     fontSize: 12,
-    fontWeight: "bold",
+    fontWeight: "600",
   },
   emptyText: {
-    fontStyle: "italic",
-    color: "#666",
+    color: MUTED,
     textAlign: "center",
-    padding: 20,
+    padding: 16,
+    fontSize: 14,
   },
   loadingText: {
     fontSize: 12,
-    color: "#666",
-    fontStyle: "italic",
+    color: MUTED,
     marginTop: 5,
   },
-  // Custom dropdown styles
   dropdownButton: {
     borderWidth: 1,
-    borderColor: "#ddd",
-    borderRadius: 8,
-    padding: 12,
-    backgroundColor: "white",
+    borderColor: BORDER,
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    backgroundColor: "#fff",
     minHeight: 50,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -1044,58 +1065,68 @@ const styles = StyleSheet.create({
   },
   dropdownText: {
     fontSize: 16,
-    color: "#333",
+    color: INK,
     flex: 1,
   },
   dropdownArrow: {
-    fontSize: 12,
-    color: "#666",
+    fontSize: 11,
+    color: MUTED,
     marginLeft: 8,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: "rgba(17, 24, 28, 0.45)",
+    justifyContent: "flex-end",
   },
   modalContainer: {
-    backgroundColor: "white",
-    borderRadius: 10,
-    margin: 20,
+    backgroundColor: "#fff",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
     maxHeight: "70%",
-    minWidth: "80%",
+    paddingBottom: 28,
+  },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 40,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "#d5dae0",
+    marginTop: 10,
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: "bold",
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-    textAlign: "center",
+    fontWeight: "700",
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 12,
+    color: INK,
   },
   modalOptions: {
-    maxHeight: 300,
+    maxHeight: 320,
   },
   modalOption: {
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#f0f0f0",
+    minHeight: 52,
+    justifyContent: "center",
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: "#eef1f4",
   },
   modalOptionText: {
     fontSize: 16,
-    color: "#333",
+    color: INK,
   },
   modalCloseButton: {
-    backgroundColor: "#c62828",
-    padding: 15,
-    borderBottomLeftRadius: 10,
-    borderBottomRightRadius: 10,
+    marginHorizontal: 20,
+    marginTop: 12,
+    height: 50,
+    justifyContent: "center",
+    borderRadius: 12,
+    backgroundColor: "#f5f7fa",
   },
   modalCloseText: {
-    color: "white",
+    color: "#3d4852",
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
     textAlign: "center",
   },
 });
