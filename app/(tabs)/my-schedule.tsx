@@ -6,6 +6,7 @@ import moment from "moment";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   RefreshControl,
   StyleSheet,
@@ -57,8 +58,12 @@ export default function MyScheduleScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [truncated, setTruncated] = useState(false);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const allowed = !!user && STAFF_ROLES.includes(user.role);
+  // Doctors see their own day; everyone else on the front desk can check in.
+  // The server still enforces the real permission (checkin.manage).
+  const canCheckIn = allowed;
 
   const load = useCallback(async () => {
     if (!allowed) return;
@@ -109,6 +114,56 @@ export default function MyScheduleScreen() {
     }, search ? 350 : 0);
     return () => clearTimeout(t);
   }, [load, allowed, search]);
+
+  // Check a patient in (or undo it) with the same endpoint the web Check-in
+  // page uses. The server sets the visit to in-progress and clears no-show.
+  const setArrived = async (row: ScheduleRow, arrived: boolean) => {
+    const name = row.patient.full_name || "the patient";
+    setBusyId(row.appointment.id);
+    try {
+      const token = await tokenStore.getItem("access_token");
+      const res = await fetch(
+        `${API_BASE_URL}/api/check-in/update-status/${row.appointment.id}/`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ arrived }),
+        }
+      );
+      if (!res.ok) {
+        Alert.alert(
+          res.status === 403 ? "Not allowed" : "Error",
+          res.status === 403
+            ? "Your account doesn't have permission to check patients in."
+            : `Could not ${arrived ? "check in" : "undo the check-in for"} ${name}. Nothing was changed.`
+        );
+        return;
+      }
+      const updated = await res.json();
+      setRows((prev) =>
+        prev.map((r) =>
+          r.appointment.id === row.appointment.id
+            ? {
+                ...r,
+                appointment: {
+                  ...r.appointment,
+                  arrived: updated.arrived ?? arrived,
+                  no_show: updated.no_show ?? false,
+                  status: updated.status ?? r.appointment.status,
+                },
+              }
+            : r
+        )
+      );
+    } catch {
+      Alert.alert("Network error", "Could not reach the server. Try again.");
+    } finally {
+      setBusyId(null);
+    }
+  };
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -229,6 +284,32 @@ export default function MyScheduleScreen() {
                       </Text>
                     )}
                   </View>
+                  {canCheckIn && (
+                    <View style={styles.actions}>
+                      {a.arrived && a.status === "in_progress" ? (
+                        <TouchableOpacity
+                          style={styles.undoBtn}
+                          disabled={busyId === a.id}
+                          onPress={() => setArrived(item, false)}
+                        >
+                          <Text style={styles.undoText}>
+                            {busyId === a.id ? "Working..." : "Undo check-in"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : ["scheduled", "pending", "no_show"].includes(a.status) &&
+                        !a.arrived ? (
+                        <TouchableOpacity
+                          style={styles.checkInBtn}
+                          disabled={busyId === a.id}
+                          onPress={() => setArrived(item, true)}
+                        >
+                          <Text style={styles.checkInText}>
+                            {busyId === a.id ? "Working..." : "Check in"}
+                          </Text>
+                        </TouchableOpacity>
+                      ) : null}
+                    </View>
+                  )}
                 </View>
               </View>
             );
@@ -294,4 +375,24 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     overflow: "hidden",
   },
+  actions: { flexDirection: "row", marginTop: 10 },
+  checkInBtn: {
+    minHeight: 44,
+    paddingHorizontal: 20,
+    borderRadius: 10,
+    backgroundColor: "#1976d2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  checkInText: { color: "#fff", fontWeight: "600", fontSize: 14 },
+  undoBtn: {
+    minHeight: 44,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#c9dcf2",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  undoText: { color: "#0d5cab", fontWeight: "600", fontSize: 14 },
 });
