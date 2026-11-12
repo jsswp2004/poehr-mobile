@@ -38,12 +38,13 @@ interface ScheduleRow {
   };
 }
 
-const STATUS_COLORS: Record<string, string> = {
-  scheduled: "#1976d2",
-  pending: "#ed6c02",
-  in_progress: "#2e7d32",
-  completed: "#616161",
-  no_show: "#c62828",
+const STATUS_CHIP: Record<string, { bg: string; fg: string }> = {
+  scheduled: { bg: "#e3effc", fg: "#0d5cab" },
+  pending: { bg: "#fdf0dc", fg: "#8a4b00" },
+  in_progress: { bg: "#e3f4e6", fg: "#1b6b2a" },
+  completed: { bg: "#eceff2", fg: "#3d4852" },
+  cancelled: { bg: "#eceff2", fg: "#3d4852" },
+  no_show: { bg: "#fde7e7", fg: "#a31d1d" },
 };
 
 const statusLabel = (s: string) =>
@@ -59,6 +60,7 @@ export default function MyScheduleScreen() {
   const [error, setError] = useState<string | null>(null);
   const [truncated, setTruncated] = useState(false);
   const [busyId, setBusyId] = useState<number | null>(null);
+  const [filter, setFilter] = useState<"all" | "waiting" | "done">("all");
 
   const allowed = !!user && STAFF_ROLES.includes(user.role);
   // Doctors see their own day; everyone else on the front desk can check in.
@@ -189,28 +191,69 @@ export default function MyScheduleScreen() {
     );
   }
 
-  const isToday = day.isSame(moment(), "day");
+  const weekStart = day.clone().startOf("isoWeek");
+  const weekDays = Array.from({ length: 7 }, (_, i) =>
+    weekStart.clone().add(i, "day")
+  );
+
+  const isWaiting = (r: ScheduleRow) =>
+    ["scheduled", "pending"].includes(r.appointment.status) && !r.appointment.arrived;
+  const isDone = (r: ScheduleRow) => r.appointment.status === "completed";
+  const waitingCount = rows.filter(isWaiting).length;
+  const doneCount = rows.filter(isDone).length;
+  const visibleRows = rows.filter((r) =>
+    filter === "waiting" ? isWaiting(r) : filter === "done" ? isDone(r) : true
+  );
+  // Highlight the next visit that still needs a check-in.
+  const nextId = rows.find(isWaiting)?.appointment.id;
+
+  const Chip = ({ id, label }: { id: "all" | "waiting" | "done"; label: string }) => (
+    <TouchableOpacity
+      onPress={() => setFilter(id)}
+      style={[styles.chip, filter === id && styles.chipOn]}
+      accessibilityRole="button"
+    >
+      <Text style={[styles.chipText, filter === id && styles.chipTextOn]}>{label}</Text>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.dayBar}>
+      <View style={styles.titleRow}>
+        <Text style={styles.screenTitle}>My Day</Text>
+        <Text style={styles.countText}>
+          {rows.length} appointment{rows.length === 1 ? "" : "s"}
+        </Text>
+      </View>
+
+      <View style={styles.weekRow}>
         <TouchableOpacity
-          style={styles.navBtn}
-          onPress={() => setDay(day.clone().subtract(1, "day"))}
-          accessibilityLabel="Previous day"
+          style={styles.weekNav}
+          onPress={() => setDay(day.clone().subtract(7, "day"))}
+          accessibilityLabel="Previous week"
         >
           <Text style={styles.navText}>‹</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => setDay(moment().startOf("day"))}>
-          <Text style={styles.dayTitle}>{day.format("ddd, MMM D, YYYY")}</Text>
-          <Text style={styles.daySub}>
-            {isToday ? "Today" : "Tap for today"}
-          </Text>
-        </TouchableOpacity>
+        <View style={styles.weekDays}>
+          {weekDays.map((d) => {
+            const sel = d.isSame(day, "day");
+            return (
+              <TouchableOpacity
+                key={d.format("YYYY-MM-DD")}
+                onPress={() => setDay(d.clone().startOf("day"))}
+                style={[styles.dayPill, sel && styles.dayPillOn]}
+                accessibilityLabel={d.format("dddd, MMMM D")}
+              >
+                <Text style={[styles.dayName, sel && styles.dayOn]}>{d.format("ddd")}</Text>
+                <Text style={[styles.dayNum, sel && styles.dayOn]}>{d.format("D")}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
         <TouchableOpacity
-          style={styles.navBtn}
-          onPress={() => setDay(day.clone().add(1, "day"))}
-          accessibilityLabel="Next day"
+          style={styles.weekNav}
+          onPress={() => setDay(day.clone().add(7, "day"))}
+          accessibilityLabel="Next week"
         >
           <Text style={styles.navText}>›</Text>
         </TouchableOpacity>
@@ -219,6 +262,7 @@ export default function MyScheduleScreen() {
       <TextInput
         style={styles.search}
         placeholder="Search patient, MRN or visit"
+        placeholderTextColor="#8b95a0"
         value={search}
         onChangeText={setSearch}
         autoCapitalize="none"
@@ -226,67 +270,82 @@ export default function MyScheduleScreen() {
         clearButtonMode="while-editing"
       />
 
+      <View style={styles.chips}>
+        <Chip id="all" label={`All ${rows.length}`} />
+        <Chip id="waiting" label={`Waiting ${waitingCount}`} />
+        <Chip id="done" label={`Done ${doneCount}`} />
+      </View>
+
       {loading && !refreshing ? (
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
       ) : (
         <FlatList
-          data={rows}
+          data={visibleRows}
           keyExtractor={(r) => String(r.appointment.id)}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
           }
-          contentContainerStyle={rows.length ? styles.list : styles.emptyWrap}
+          contentContainerStyle={visibleRows.length ? styles.list : styles.emptyWrap}
           ListEmptyComponent={
             <Text style={styles.muted}>
-              {error || "No appointments for this day."}
+              {error ||
+                (rows.length
+                  ? "No visits match this filter."
+                  : "No appointments for this day.")}
             </Text>
           }
-          ListHeaderComponent={
-            rows.length ? (
-              <Text style={styles.count}>
-                {rows.length} appointment{rows.length === 1 ? "" : "s"}
-                {truncated ? " (showing first results)" : ""}
-              </Text>
+          ListFooterComponent={
+            truncated ? (
+              <Text style={styles.muted}>Showing first results. Narrow with search.</Text>
             ) : undefined
           }
           renderItem={({ item }) => {
             const a = item.appointment;
-            const color = STATUS_COLORS[a.status] || "#616161";
+            const chip = STATUS_CHIP[a.status] || STATUS_CHIP.completed;
+            const isNext = a.id === nextId;
+            const dim = a.status === "completed" || a.status === "cancelled";
             return (
-              <View style={styles.card}>
+              <View
+                style={[styles.card, isNext && styles.cardNext, dim && styles.cardDim]}
+              >
                 <View style={styles.timeCol}>
-                  <Text style={styles.time}>{moment(a.start).format("h:mm")}</Text>
-                  <Text style={styles.ampm}>{moment(a.start).format("A")}</Text>
-                  <Text style={styles.dur}>{a.duration_minutes} min</Text>
+                  <Text style={[styles.time, dim && styles.timeDim]}>
+                    {moment(a.start).format("h:mm")}
+                  </Text>
+                  <Text style={[styles.ampm, dim && styles.timeDim]}>
+                    {moment(a.start).format("A")}
+                  </Text>
                 </View>
                 <View style={styles.body}>
                   <Text style={styles.name}>
                     {item.patient.full_name || "Unknown patient"}
                   </Text>
-                  {!!a.title && <Text style={styles.title}>{a.title}</Text>}
                   <Text style={styles.meta}>
-                    {[a.provider_name, a.unit_name].filter(Boolean).join(" · ")}
+                    {[a.title, `${a.duration_minutes} min`].filter(Boolean).join(" · ")}
                   </Text>
+                  {!!(a.provider_name || a.unit_name) && (
+                    <Text style={styles.meta}>
+                      {[a.provider_name, a.unit_name].filter(Boolean).join(" · ")}
+                    </Text>
+                  )}
                   <View style={styles.badges}>
-                    <Text style={[styles.badge, { backgroundColor: color }]}>
+                    <Text style={[styles.badge, { backgroundColor: chip.bg, color: chip.fg }]}>
                       {statusLabel(a.status)}
                     </Text>
                     {a.arrived && (
-                      <Text style={[styles.badge, { backgroundColor: "#2e7d32" }]}>
+                      <Text style={[styles.badge, STATUS_CHIP.in_progress && { backgroundColor: STATUS_CHIP.in_progress.bg, color: STATUS_CHIP.in_progress.fg }]}>
                         Arrived
                       </Text>
                     )}
                     {a.no_show && (
-                      <Text style={[styles.badge, { backgroundColor: "#c62828" }]}>
+                      <Text style={[styles.badge, { backgroundColor: STATUS_CHIP.no_show.bg, color: STATUS_CHIP.no_show.fg }]}>
                         No show
                       </Text>
                     )}
-                  </View>
-                  {canCheckIn && (
-                    <View style={styles.actions}>
-                      {a.arrived && a.status === "in_progress" ? (
+                    {canCheckIn &&
+                      (a.arrived && a.status === "in_progress" ? (
                         <TouchableOpacity
                           style={styles.undoBtn}
                           disabled={busyId === a.id}
@@ -307,9 +366,8 @@ export default function MyScheduleScreen() {
                             {busyId === a.id ? "Working..." : "Check in"}
                           </Text>
                         </TouchableOpacity>
-                      ) : null}
-                    </View>
-                  )}
+                      ) : null)}
+                  </View>
                 </View>
               </View>
             );
@@ -323,62 +381,85 @@ export default function MyScheduleScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   center: { flex: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  muted: { color: "#666", textAlign: "center", fontSize: 15 },
-  dayBar: {
+  muted: { color: "#5b6670", textAlign: "center", fontSize: 15 },
+  titleRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    height: 56,
+    paddingHorizontal: 20,
   },
-  navBtn: { padding: 10 },
-  navText: { fontSize: 30, color: "#1976d2", lineHeight: 32 },
-  dayTitle: { fontSize: 18, fontWeight: "700", textAlign: "center", color: "#11181C" },
-  daySub: { fontSize: 12, color: "#666", textAlign: "center" },
+  screenTitle: { fontSize: 24, fontWeight: "700", color: "#11181C" },
+  countText: { fontSize: 13, fontWeight: "500", color: "#5b6670" },
+  weekRow: { flexDirection: "row", alignItems: "center", paddingHorizontal: 4 },
+  weekNav: { width: 28, alignItems: "center", justifyContent: "center", height: 48 },
+  navText: { fontSize: 28, color: "#1976d2", lineHeight: 30 },
+  weekDays: { flex: 1, flexDirection: "row", justifyContent: "space-between" },
+  dayPill: { flex: 1, alignItems: "center", paddingVertical: 8, borderRadius: 14 },
+  dayPillOn: { backgroundColor: "#1976d2" },
+  dayName: { fontSize: 11, fontWeight: "600", color: "#5b6670" },
+  dayNum: { fontSize: 17, fontWeight: "600", color: "#5b6670", marginTop: 2 },
+  dayOn: { color: "#fff", fontWeight: "700" },
   search: {
+    height: 46,
     borderWidth: 1,
-    borderColor: "#ccc",
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    marginHorizontal: 16,
-    marginBottom: 8,
-    fontSize: 16,
+    borderColor: "#c5ccd4",
+    borderRadius: 12,
+    backgroundColor: "#f5f7fa",
+    paddingHorizontal: 14,
+    marginHorizontal: 20,
+    marginTop: 12,
+    fontSize: 15,
+    color: "#11181C",
   },
-  list: { paddingHorizontal: 16, paddingBottom: 24 },
+  chips: { flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingTop: 12 },
+  chip: {
+    minHeight: 36,
+    paddingHorizontal: 14,
+    borderRadius: 18,
+    backgroundColor: "#f5f7fa",
+    justifyContent: "center",
+  },
+  chipOn: { backgroundColor: "#1976d2" },
+  chipText: { fontSize: 13, fontWeight: "600", color: "#3d4852" },
+  chipTextOn: { color: "#fff" },
+  list: { paddingHorizontal: 20, paddingTop: 14, paddingBottom: 32 },
   emptyWrap: { flexGrow: 1, alignItems: "center", justifyContent: "center", padding: 24 },
-  count: { color: "#666", fontSize: 13, marginBottom: 8 },
   card: {
     flexDirection: "row",
+    gap: 12,
     borderWidth: 1,
-    borderColor: "#e0e0e0",
-    borderRadius: 10,
-    padding: 12,
+    borderColor: "#e3e8ee",
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     marginBottom: 10,
     backgroundColor: "#fff",
   },
-  timeCol: { width: 64, alignItems: "center", marginRight: 12 },
-  time: { fontSize: 20, fontWeight: "700", color: "#1976d2" },
-  ampm: { fontSize: 12, color: "#1976d2" },
-  dur: { fontSize: 11, color: "#888", marginTop: 4 },
-  body: { flex: 1 },
-  name: { fontSize: 16, fontWeight: "600", color: "#11181C" },
-  title: { fontSize: 14, color: "#333", marginTop: 2 },
-  meta: { fontSize: 12, color: "#666", marginTop: 2 },
-  badges: { flexDirection: "row", flexWrap: "wrap", marginTop: 6, gap: 6 },
+  cardNext: { borderWidth: 2, borderColor: "#1976d2", backgroundColor: "#f7fbff" },
+  cardDim: { opacity: 0.78 },
+  timeCol: { width: 52, alignItems: "center" },
+  time: { fontSize: 18, fontWeight: "700", color: "#1976d2" },
+  ampm: { fontSize: 11, fontWeight: "600", color: "#1976d2" },
+  timeDim: { color: "#5b6670" },
+  body: { flex: 1, minWidth: 0 },
+  name: { fontSize: 15, fontWeight: "600", color: "#11181C" },
+  meta: { fontSize: 12, color: "#5b6670", marginTop: 1 },
+  badges: { flexDirection: "row", flexWrap: "wrap", alignItems: "center", marginTop: 8, gap: 6 },
   badge: {
-    color: "#fff",
     fontSize: 11,
     fontWeight: "600",
-    paddingHorizontal: 8,
+    paddingHorizontal: 9,
     paddingVertical: 3,
-    borderRadius: 10,
+    borderRadius: 999,
     overflow: "hidden",
+    backgroundColor: "#e3f4e6",
+    color: "#1b6b2a",
   },
-  actions: { flexDirection: "row", marginTop: 10 },
   checkInBtn: {
+    marginLeft: "auto",
     minHeight: 44,
-    paddingHorizontal: 20,
+    paddingHorizontal: 18,
     borderRadius: 10,
     backgroundColor: "#1976d2",
     alignItems: "center",
@@ -386,6 +467,7 @@ const styles = StyleSheet.create({
   },
   checkInText: { color: "#fff", fontWeight: "600", fontSize: 14 },
   undoBtn: {
+    marginLeft: "auto",
     minHeight: 44,
     paddingHorizontal: 16,
     borderRadius: 10,
