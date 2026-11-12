@@ -25,6 +25,7 @@ const MAPPING = {
   "person.2.fill": "people",
   calendar: "event",
   "clock.fill": "schedule",
+  "list.bullet": "format-list-bulleted",
 } as IconMapping;
 
 /**

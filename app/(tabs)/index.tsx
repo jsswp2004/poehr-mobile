@@ -1,7 +1,7 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { tokenStore } from "@/utils/tokenStore";
 import { Image } from "expo-image";
 import { router } from "expo-router";
-import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
 import { Alert, StyleSheet, TouchableOpacity } from "react-native";
@@ -10,16 +10,6 @@ import ParallaxScrollView from "@/components/ParallaxScrollView";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { API_BASE_URL } from "@/config/api";
-
-interface User {
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  role: string;
-  email?: string;
-  user_id: number;
-  organization?: string; // Add organization field
-}
 
 interface Appointment {
   id: number;
@@ -33,14 +23,9 @@ interface Appointment {
 }
 
 export default function HomeScreen() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading } = useCurrentUser();
   const [todayAppointments, setTodayAppointments] = useState<Appointment[]>([]);
   const [loadingAppointments, setLoadingAppointments] = useState(false);
-
-  useEffect(() => {
-    loadUserData();
-  }, []);
 
   useEffect(() => {
     if (user) {
@@ -52,29 +37,6 @@ export default function HomeScreen() {
   // "clinic"/"health" organizations to adaptive-icon.png, which is just the
   // Expo template placeholder.)
   const getOrganizationLogo = () => require("@/assets/images/power-logo.png");
-
-  const loadUserData = async () => {
-    try {
-      const token = await tokenStore.getItem("access_token");
-      if (token) {
-        const decodedToken: any = jwtDecode(token);
-        
-        setUser({
-          username: decodedToken.username,
-          firstName: decodedToken.first_name,
-          lastName: decodedToken.last_name,
-          role: decodedToken.role,
-          email: decodedToken.email,
-          user_id: decodedToken.user_id,
-          organization: decodedToken.organization_name || "Unknown Organization", // Fixed: use organization_name
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load user data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadTodayAppointments = async () => {
     setLoadingAppointments(true);

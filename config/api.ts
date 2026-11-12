@@ -28,12 +28,10 @@ export const PRODUCTION_API_URL = PROD_API_BASE_URL;
 
 export const API_ENDPOINTS = {
   LOGIN: `${API_BASE_URL}/api/auth/login/`,
-  // TODO: confirm this path against the Django urls.py (SimpleJWT TokenRefreshView)
   REFRESH: `${API_BASE_URL}/api/auth/token/refresh/`,
   REGISTER: `${API_BASE_URL}/api/auth/register/`,
   APPOINTMENTS: `${API_BASE_URL}/api/appointments/`,
   PATIENTS: `${API_BASE_URL}/api/users/patients/`, // Updated to correct endpoint
-  BLOCKED_DATES: `${API_BASE_URL}/api/blocked-dates/`,
 };
 
 // Helper function to get headers with authorization
@@ -65,7 +63,7 @@ export const testAPIConnection = async (): Promise<boolean> => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000);
 
-    const response = await fetch(`${API_BASE_URL}/api/health/`, {
+    const response = await fetch(`${API_BASE_URL}/health/`, {
       method: "GET",
       signal: controller.signal,
     });

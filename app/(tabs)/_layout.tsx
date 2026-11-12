@@ -6,9 +6,12 @@ import { HapticTab } from "@/components/HapticTab";
 import { IconSymbol } from "@/components/ui/IconSymbol";
 import { Colors } from "@/constants/Colors";
 import { useColorScheme } from "@/hooks/useColorScheme";
+import { STAFF_ROLES, useCurrentUser } from "@/hooks/useCurrentUser";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { user } = useCurrentUser();
+  const isStaff = !!user && STAFF_ROLES.includes(user.role);
 
   return (
     <Tabs
@@ -25,6 +28,17 @@ export default function TabLayout() {
           title: "Home",
           tabBarIcon: ({ color }) => (
             <IconSymbol size={28} name="house.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="my-schedule"
+        options={{
+          title: "My Day",
+          // Hidden until we know the signed-in user is staff.
+          href: isStaff ? undefined : null,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="list.bullet" color={color} />
           ),
         }}
       />

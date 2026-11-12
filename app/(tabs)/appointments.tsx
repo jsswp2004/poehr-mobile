@@ -1,5 +1,5 @@
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { tokenStore } from "@/utils/tokenStore";
-import { jwtDecode } from "jwt-decode";
 import moment from "moment";
 import React, { useEffect, useState } from "react";
 import {
@@ -16,15 +16,6 @@ import BlockedDateModal from "@/components/BlockedDateModal";
 import { ThemedText } from "@/components/ThemedText";
 import { ThemedView } from "@/components/ThemedView";
 import { API_BASE_URL } from "@/config/api";
-
-interface User {
-  username: string;
-  firstName?: string;
-  lastName?: string;
-  role: string;
-  email?: string;
-  user_id: number;
-}
 
 interface Appointment {
   id: number;
@@ -69,14 +60,14 @@ interface Doctor {
 }
 
 export default function AppointmentsScreen() {
-  const [user, setUser] = useState<User | null>(null);
+  const { user, loading: userLoading } = useCurrentUser();
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [blockedDates, setBlockedDates] = useState<BlockedDateDisplay[]>([]);
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [selectedDate, setSelectedDate] = useState<string>(
     moment().format("YYYY-MM-DD")
   );
-  const [loading, setLoading] = useState(true);
+  const loading = userLoading;
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingAppointment, setEditingAppointment] = useState<
@@ -88,37 +79,12 @@ export default function AppointmentsScreen() {
   >();
 
   useEffect(() => {
-    loadUserData();
-  }, []);
-
-  useEffect(() => {
     if (user) {
       loadAppointments();
       loadBlockedDates();
       loadDoctors();
     }
   }, [user, selectedDate]);
-
-  const loadUserData = async () => {
-    try {
-      const token = await tokenStore.getItem("access_token");
-      if (token) {
-        const decodedToken: any = jwtDecode(token);
-        setUser({
-          username: decodedToken.username,
-          firstName: decodedToken.first_name,
-          lastName: decodedToken.last_name,
-          role: decodedToken.role,
-          email: decodedToken.email,
-          user_id: decodedToken.user_id,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load user data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadAppointments = async () => {
     try {
@@ -755,18 +721,6 @@ export default function AppointmentsScreen() {
         ) : (
           <ThemedView style={styles.noAppointments}>
             <ThemedText>No appointments scheduled for this date.</ThemedText>
-            <ThemedText style={styles.debugText}>
-              Current user role: {user?.role || "No role"}
-            </ThemedText>
-            <ThemedText style={styles.debugText}>
-              Selected date: {selectedDate}
-            </ThemedText>
-            <ThemedText style={styles.debugText}>
-              Total appointments in system: {appointments?.length || 0}
-            </ThemedText>
-            <ThemedText style={styles.debugText}>
-              Appointments for this date: {dayAppointments.length}
-            </ThemedText>
             {user?.role !== "patient" && (
               <ThemedView style={styles.actionButtons}>
                 <TouchableOpacity
@@ -786,11 +740,6 @@ export default function AppointmentsScreen() {
                   </ThemedText>
                 </TouchableOpacity>
               </ThemedView>
-            )}
-            {user?.role === "patient" && (
-              <ThemedText style={styles.debugText}>
-                Patient role - buttons hidden
-              </ThemedText>
             )}
           </ThemedView>
         )}
@@ -1077,11 +1026,5 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     textAlign: "center",
     fontSize: 16,
-  },
-  debugText: {
-    color: "#666",
-    fontSize: 12,
-    marginTop: 10,
-    textAlign: "center",
   },
 });
